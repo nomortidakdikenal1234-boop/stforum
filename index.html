@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyTechnology Company Forum</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        skybrand: {
+                            DEFAULT: '#000090',
+                            dark: '#000070',
+                            light: '#1a1a90',
+                            hover: '#0000b0',
+                            accent: '#0055ff',
+                            bg: '#f0f3f8',
+                            card: '#ffffff'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Outfit', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f3f8;
+            color: #1e293b;
+        }
+        .grid-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .chatbox-bg {
+            background-color: #000070;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes logoFloat {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 144, 0.4);
+            }
+            50% {
+                transform: translateY(-8px) scale(1.04);
+                box-shadow: 0 20px 35px -5px rgba(0, 85, 255, 0.5);
+            }
+        }
+        .animate-logo-float {
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased flex flex-col">
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- LOADING OVERLAY ANIMATION -->
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-[#000090] z-50 flex flex-col items-center justify-center text-white p-4">
+        <div class="relative flex flex-col items-center">
+            <div class="w-40 h-40 sm:w-56 sm:h-56 mb-6 rounded-2xl bg-white/10 p-3 backdrop-blur-md shadow-2xl border border-white/20 flex items-center justify-center overflow-hidden">
+                <img src="https://www.upload.ee/image/19692240/ezgif.com-video-to-gif-converter__1_.gif" 
+                     alt="Loading GIF" 
+                     class="w-full h-full object-contain rounded-xl"
+                     onerror="this.onerror=null; this.src='https://placehold.co/200/000090/ffffff?text=Loading...';">
+            </div>
+            <div class="flex items-center gap-3 text-sm sm:text-base font-medium tracking-wide text-blue-100 bg-white/10 px-5 py-2.5 rounded-full backdrop-blur-sm border border-white/10">
+                <i class="fa-solid fa-circle-notch animate-spin text-blue-300"></i>
+                <span>Memuat SkyTechnology Forum...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LANDING PAGE VIEW (INITIAL DISPLAY) -->
+    <div id="landing-page" class="flex-1 flex flex-col justify-center items-center px-4 py-16 grid-pattern bg-slate-50 relative overflow-hidden">
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-300/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-3xl w-full text-center relative z-10 flex flex-col items-center">
+            <!-- ST Company Logo Icon -->
+            <div class="mb-8 w-24 h-24 rounded-2xl bg-[#000090] shadow-xl border border-blue-400/30 flex items-center justify-center overflow-hidden animate-logo-float">
+                <img src="https://www.upload.ee/image/19692241/STCOMPANYLOGO.png" 
+                     alt="SkyTechnology Company Logo" 
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.src='https://placehold.co/100/000090/ffffff?text=ST';">
+            </div>
+
+            <!-- Main Headline -->
+            <h1 class="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight max-w-2xl font-display mb-4">
+                SkyTechnology Company Forum
+            </h1>
+
+            <!-- Subheadline -->
+            <p class="text-slate-600 text-base sm:text-lg leading-relaxed max-w-xl mb-10 font-medium tracking-wide">
+                Beyond Innovation. Beyond Technology. Beyond Limits.
+            </p>
+
+            <!-- CTA Action Buttons -->
+            <div class="flex items-center justify-center gap-4 mb-10">
+                <button onclick="enterForum()" class="px-7 py-3.5 bg-slate-950 hover:bg-slate-800 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 group text-sm cursor-pointer">
+                    <span>Get Started</span>
+                    <i class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+
+            <!-- Powered By Badge -->
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-200/60 border border-slate-300/50 text-slate-600 text-xs font-medium">
+                <i class="fa-solid fa-microchip text-blue-700"></i>
+                <span>Powered by: <a href="https://sky-ai.my.id" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-900 hover:text-blue-700 hover:underline transition">Sky AI Community</a> & <strong>SkyTechnology Company JGRP</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN FORUM APPLICATION (HIDDEN INITIALLY) -->
+    <div id="forum-app" class="hidden flex-1 flex flex-col">
+        
+        <!-- HEADER & NAVBAR -->
+        <header class="bg-[#000090] text-white shadow-md sticky top-0 z-40">
+            <!-- Top Utility & Brand Bar -->
+            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
+                    <div class="w-10 h-10 bg-[#000090] rounded-lg border border-blue-400/40 flex items-center justify-center shadow-md overflow-hidden flex-shrink-0">
+                        <img src="https://www.upload.ee/image/19692241/STCOMPANYLOGO.png" 
+                             alt="ST Logo" 
+                             class="w-full h-full object-cover"
+                             onerror="this.onerror=null; this.src='https://placehold.co/100/000090/ffffff?text=ST';">
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-lg tracking-tight leading-none font-display">SkyTechnology</div>
+                        <div class="text-[10px] text-blue-200 uppercase font-semibold tracking-wider mt-0.5">Company Forum</div>
+                    </div>
+                </div>
+
+                <!-- Functional Live Search Bar with Dropdown -->
+                <div class="relative w-48 sm:w-72">
+                    <div class="flex items-center relative">
+                        <input type="text" id="forum-search-input" placeholder="Search forums, announcements..." 
+                               oninput="handleSearchInput(this.value)"
+                               onfocus="handleSearchInput(this.value)"
+                               class="w-full bg-blue-950/60 border border-blue-400/30 rounded-full px-4 py-1.5 pl-9 pr-7 text-xs text-white placeholder-blue-200/70 focus:outline-none focus:bg-blue-950 focus:border-white transition-all">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 text-blue-300 text-xs"></i>
+                        <button onclick="clearSearchInput()" id="search-clear-btn" class="hidden absolute right-2.5 text-blue-300 hover:text-white text-xs cursor-pointer">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Live Search Results Dropdown -->
+                    <div id="search-results-dropdown" class="hidden absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-2xl border border-slate-200 p-2 text-xs text-slate-800 z-50 max-h-80 overflow-y-auto custom-scrollbar">
+                        <!-- Dynamic Results Rendered Here -->
+                    </div>
+                </div>
+
+                <!-- Dynamic Auth Header Right (Only Login button when logged out) -->
+                <div id="auth-header-state" class="flex items-center gap-3">
+                    <!-- Logged Out State (Only Login Button) -->
+                    <div id="logged-out-view" class="flex items-center gap-2">
+                        <button onclick="openLoginModal()" class="px-5 py-1.5 bg-white text-[#000090] hover:bg-blue-50 rounded-md text-xs font-bold transition cursor-pointer shadow-sm">
+                            Login
+                        </button>
+                    </div>
+
+                    <!-- Logged In State -->
+                    <div id="logged-in-view" class="hidden flex items-center gap-3">
+                        <span id="user-role-badge" class="hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-800 text-blue-100 border border-blue-600">
+                            Member
+                        </span>
+                        <div class="flex items-center gap-2 cursor-pointer group" onclick="openProfileModal()" title="Buka Pengaturan Profil">
+                            <img id="user-avatar" src="https://placehold.co/100/000090/ffffff?text=ST" alt="User" class="w-8 h-8 rounded-full border border-blue-300 object-cover hover:opacity-80 transition">
+                            <span id="user-display-name" class="text-xs font-semibold group-hover:text-blue-200 transition">Username</span>
+                        </div>
+                        <button onclick="handleLogout()" title="Logout" class="p-2 text-blue-200 hover:text-white transition cursor-pointer">
+                            <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Primary Navigation Bar -->
+            <nav class="bg-[#000070] border-t border-blue-900/50">
+                <div class="max-w-7xl mx-auto px-4 flex items-center justify-between">
+                    <div class="flex items-center gap-1 text-xs font-semibold overflow-x-auto">
+                        <button id="nav-btn-home" onclick="switchTab('home')" class="px-4 py-2.5 bg-[#000090] text-white border-b-2 border-white flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Home</span>
+                        </button>
+                        <button id="nav-btn-announcements" onclick="openSubforum('Announcement')" class="px-4 py-2.5 text-blue-100 hover:bg-blue-900/50 hover:text-white transition flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                            <i class="fa-solid fa-bullhorn"></i>
+                            <span>Announcements</span>
+                        </button>
+                        <button onclick="showRulesModal()" class="px-4 py-2.5 text-blue-100 hover:bg-blue-900/50 hover:text-white transition flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                            <i class="fa-solid fa-book"></i>
+                            <span>Rules</span>
+                        </button>
+                        <!-- Request Role Button placed next to Rules -->
+                        <button onclick="openRequestRoleModal()" class="px-4 py-2.5 text-amber-300 hover:bg-blue-900/50 hover:text-amber-200 transition flex items-center gap-2 cursor-pointer font-bold whitespace-nowrap">
+                            <i class="fa-solid fa-id-card"></i>
+                            <span>Request Role</span>
+                        </button>
+
+                        <!-- Admin Role Requests Inbox Button (Visible for Admin/Staff) -->
+                        <button id="admin-requests-nav-btn" onclick="openAdminRoleRequestsModal()" class="hidden px-4 py-2.5 text-emerald-300 hover:bg-blue-900/50 hover:text-emerald-200 transition flex items-center gap-2 cursor-pointer font-bold relative whitespace-nowrap">
+                            <i class="fa-solid fa-inbox"></i>
+                            <span>Inbox Request Role</span>
+                            <span id="role-requests-badge-count" class="hidden px-1.5 py-0.5 bg-red-600 text-white text-[10px] font-extrabold rounded-full">0</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- BREADCRUMB -->
+        <div class="bg-white border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between text-xs text-slate-600">
+                <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+                    <span class="cursor-pointer hover:text-[#000090]" onclick="switchTab('home')">Home</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+                    <span id="breadcrumb-current" class="font-semibold text-slate-900">Forums</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN FORUM CONTENT CONTAINER -->
+        <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- LEFT / MAIN FORUM CONTENT AREA (3 Columns) -->
+            <div class="lg:col-span-3 space-y-6">
+
+                <!-- CHATBOX WIDGET (Top Position with User Profile Avatar) -->
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="chatbox-bg px-4 py-2.5 text-white flex items-center justify-between font-bold text-xs">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-blue-300"></i>
+                            <span>Chatbox Komunitas</span>
+                        </div>
+                        <span class="text-[10px] bg-blue-900/60 px-2 py-0.5 rounded text-blue-200 font-normal flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Realtime Live
+                        </span>
+                    </div>
+                    
+                    <!-- Chatbox Messages Area -->
+                    <div id="chatbox-messages" class="h-44 p-4 overflow-y-auto space-y-2 text-xs custom-scrollbar bg-slate-50/50">
+                        <div id="chatbox-empty-notice" class="h-full flex flex-col items-center justify-center text-slate-400 text-center py-6">
+                            <i class="fa-regular fa-comment-dots text-2xl mb-1 text-slate-300"></i>
+                            <p>Belum ada pesan di chatbox. Mulai percakapan sekarang!</p>
+                        </div>
+                    </div>
+
+                    <!-- Chatbox Input -->
+                    <div class="p-2 bg-white border-t border-slate-200 flex gap-2">
+                        <input type="text" id="chat-input" placeholder="Tulis pesan kamu di sini... (Login untuk mengirim)" 
+                               onkeypress="if(event.key === 'Enter') sendChatMessage()"
+                               class="flex-1 bg-slate-100 border border-slate-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#000090]">
+                        <button onclick="sendChatMessage()" class="px-4 py-1.5 bg-[#000090] hover:bg-[#000070] text-white rounded font-semibold text-xs transition cursor-pointer">
+                            Kirim
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VIEW 1: FORUM CATEGORIES HOME -->
+                <div id="view-home" class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-[#000090] px-4 py-3 text-white font-bold text-sm tracking-wide flex items-center justify-between">
+                            <div class="flex items-center gap-2 font-display">
+                                <i class="fa-solid fa-shield-halved text-blue-300"></i>
+                                <span>SkyTechnology Official Hub</span>
+                            </div>
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                            <!-- Subforum 1: Announcement -->
+                            <div class="p-4 flex items-center justify-between hover:bg-slate-50/80 transition group cursor-pointer" onclick="openSubforum('Announcement')">
+                                <div class="flex items-start gap-3.5 flex-1">
+                                    <div class="w-10 h-10 rounded bg-blue-50 text-[#000090] flex items-center justify-center flex-shrink-0 group-hover:bg-[#000090] group-hover:text-white transition">
+                                        <i class="fa-solid fa-newspaper text-base"></i>
+                                    </div>
+                                    <div>
+                                        <a href="javascript:void(0)" class="font-bold text-sm text-slate-900 group-hover:text-[#000090] transition">Announcement</a>
+                                        <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">All official news and updates regarding SkyTechnology Company will be published here!</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+
+                            <!-- Subforum 2: List Staff -->
+                            <div class="p-4 flex items-center justify-between hover:bg-slate-50/80 transition group cursor-pointer" onclick="openSubforum('List Staff')">
+                                <div class="flex items-start gap-3.5 flex-1">
+                                    <div class="w-10 h-10 rounded bg-blue-50 text-[#000090] flex items-center justify-center flex-shrink-0 group-hover:bg-[#000090] group-hover:text-white transition">
+                                        <i class="fa-solid fa-users-gear text-base"></i>
+                                    </div>
+                                    <div>
+                                        <a href="javascript:void(0)" class="font-bold text-sm text-slate-900 group-hover:text-[#000090] transition">List Staff</a>
+                                        <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">Daftar jajaran struktur pimpinan, Administrator, dan Staff resmi SkyTechnology Company.</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+
+                            <!-- Subforum 3: Recruitment Information -->
+                            <div class="p-4 flex items-center justify-between hover:bg-slate-50/80 transition group cursor-pointer" onclick="openSubforum('Recruitment')">
+                                <div class="flex items-start gap-3.5 flex-1">
+                                    <div class="w-10 h-10 rounded bg-blue-50 text-[#000090] flex items-center justify-center flex-shrink-0 group-hover:bg-[#000090] group-hover:text-white transition">
+                                        <i class="fa-solid fa-user-plus text-base"></i>
+                                    </div>
+                                    <div>
+                                        <a href="javascript:void(0)" class="font-bold text-sm text-slate-900 group-hover:text-[#000090] transition">Recruitment Information</a>
+                                        <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">Informasi pendaftaran lowongan posisi Staff, teknisi, dan pendaftaran role resmi.</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: ANNOUNCEMENTS SUBFORUM -->
+                <div id="view-announcements" class="hidden space-y-4">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden p-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4 gap-2 flex-wrap">
+                            <div class="flex items-center gap-3">
+                                <button onclick="switchTab('home')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-md transition flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-sm flex-shrink-0">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                    <span>Kembali</span>
+                                </button>
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
+                                        <i class="fa-solid fa-bullhorn text-[#000090]"></i>
+                                        <span>SkyTechnology Official Announcements</span>
+                                    </h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Pengumuman resmi khusus dipublikasikan oleh Administrator & Staff.</p>
+                                </div>
+                            </div>
+                            <!-- Admin Only Post Button -->
+                            <button id="admin-create-ann-btn" onclick="openCreateAnnouncementModal()" class="hidden px-4 py-2 bg-[#000090] hover:bg-blue-900 text-white text-xs font-bold rounded-md transition shadow cursor-pointer flex-shrink-0">
+                                <i class="fa-solid fa-plus mr-1"></i> Buat Pengumuman (Admin Only)
+                            </button>
+                        </div>
+
+                        <!-- Announcements Container -->
+                        <div id="announcements-list-detailed" class="space-y-4">
+                            <div class="text-center py-10 text-slate-400 text-xs">
+                                <i class="fa-solid fa-circle-notch animate-spin text-xl mb-2 text-[#000090]"></i>
+                                <p>Memuat data pengumuman...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: LIST STAFF VIEW -->
+                <div id="view-list-staff" class="hidden space-y-4">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+                        <div class="border-b border-slate-100 pb-4 flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-3">
+                                <button onclick="switchTab('home')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-md transition flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-sm flex-shrink-0">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                    <span>Kembali</span>
+                                </button>
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
+                                        <i class="fa-solid fa-users-gear text-[#000090]"></i>
+                                        <span>SkyTechnology Staff Directory</span>
+                                    </h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Daftar tim manajemen dan jajaran pengurus resmi SkyTechnology.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="admin-manage-staff-btn" onclick="openManageStaffModal()" class="hidden px-3 py-1.5 bg-[#000090] hover:bg-blue-900 text-white text-xs font-bold rounded-md transition shadow cursor-pointer flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                    <span>Tambah / Kelola Staff</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Staff Directory Content (Clean Empty State) -->
+                        <div id="staff-directory-content" class="space-y-6">
+                            <div class="text-center py-8 text-slate-400 text-xs">
+                                <i class="fa-solid fa-circle-notch animate-spin text-xl mb-2 text-[#000090]"></i>
+                                <p>Memuat daftar staff...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: RECRUITMENT INFORMATION VIEW -->
+                <div id="view-recruitment" class="hidden space-y-4">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+                        <div class="border-b border-slate-100 pb-4 flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-3">
+                                <button onclick="switchTab('home')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-md transition flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-sm flex-shrink-0">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                    <span>Kembali</span>
+                                </button>
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
+                                        <i class="fa-solid fa-user-plus text-[#000090]"></i>
+                                        <span>Recruitment & Join SkyTechnology</span>
+                                    </h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Informasi penerimaan anggota dan jajaran Staff SkyTechnology Company.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="admin-edit-recruitment-btn" onclick="openEditRecruitmentModal()" class="hidden px-3 py-1.5 bg-[#000090] hover:bg-blue-900 text-white text-xs font-bold rounded-md transition shadow cursor-pointer flex items-center gap-1.5">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    <span>Edit Info Rekrutmen</span>
+                                </button>
+                                <span id="recruitment-status-badge" class="px-3 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-xs font-bold rounded-full flex items-center gap-1.5 flex-shrink-0">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> RECRUITMENT OPEN
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Recruitment Details Container -->
+                        <div class="space-y-4 text-xs text-slate-700 leading-relaxed">
+                            <div id="recruitment-general-notice" class="p-4 bg-blue-50/70 border border-blue-100 rounded-xl space-y-2">
+                                <h3 class="font-bold text-sm text-[#000090] flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-info"></i> Ketentuan Pendaftaran Staff & Customer
+                                </h3>
+                                <p id="recruitment-notice-text">SkyTechnology Company membuka kesempatan bagi Anda yang ingin bergabung sebagai <strong>Staff Resmi</strong> atau memverifikasi status Anda sebagai <strong>Customer</strong>.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <!-- Staff Role Requirements -->
+                                <div class="p-4 border border-slate-200 rounded-xl space-y-2 bg-slate-50/50">
+                                    <div class="flex items-center gap-2 font-bold text-slate-900">
+                                        <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                                        <span>Persyaratan Staff</span>
+                                    </div>
+                                    <ul id="recruitment-staff-reqs" class="list-disc list-inside space-y-1 text-slate-600 pl-1">
+                                        <li>Aktif di komunitas & forum SkyTechnology.</li>
+                                        <li>Memiliki integritas, kejujuran, dan komunikasi yang baik.</li>
+                                        <li>Siap membantu anggota komunitas dan mendukung operasional.</li>
+                                        <li>Mengirimkan alasan pengajuan melalui tombol **Request Role**.</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Customer Role Requirements -->
+                                <div class="p-4 border border-slate-200 rounded-xl space-y-2 bg-slate-50/50">
+                                    <div class="flex items-center gap-2 font-bold text-slate-900">
+                                        <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+                                        <span>Persyaratan Customer</span>
+                                    </div>
+                                    <ul id="recruitment-customer-reqs" class="list-disc list-inside space-y-1 text-slate-600 pl-1">
+                                        <li>Merupakan pelanggan resmi layanan SkyTechnology.</li>
+                                        <li>Melampirkan ID / Bukti status customer pada saat pengajuan.</li>
+                                        <li>Mendapatkan konfirmasi role otomatis setelah diverifikasi Admin.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Action CTA -->
+                            <div class="pt-4 flex items-center justify-center">
+                                <button onclick="openRequestRoleModal()" class="px-6 py-3 bg-[#000090] hover:bg-blue-900 text-white font-bold rounded-full shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-id-card text-amber-400"></i>
+                                    <span>Kirim Pengajuan Request Role Sekarang</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT SIDEBAR WIDGETS -->
+            <aside class="space-y-6">
+                <!-- Radio Widget -->
+                <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-[#000090] px-4 py-2.5 text-white font-bold text-xs flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-radio"></i>
+                            <span>SkyTechnology Radio</span>
+                        </div>
+                        <span id="radio-status-badge" class="text-[10px] bg-emerald-600 text-white font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE
+                        </span>
+                    </div>
+                    <div class="p-4 text-center">
+                        <div class="text-xs font-semibold text-slate-700 mb-2">SkyTechnology Live Radio Stream</div>
+                        <audio id="skytech-radio-player" class="w-full h-9 rounded-md border border-slate-200" controls preload="none">
+                            <source src="https://xyz-sa.site/skytech-radio" type="audio/mpeg">
+                            Browser Anda tidak mendukung elemen audio.
+                        </audio>
+                    </div>
+                </div>
+            </aside>
+
+        </main>
+
+    </div>
+
+    <!-- MODAL CONTAINERS -->
+    
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1">Welcome Back</h2>
+            <p class="text-xs text-slate-500 mb-6">Login ke akun SkyTechnology Forum kamu.</p>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama / Username</label>
+                    <input type="text" id="login-username" required placeholder="Masukkan Nama atau Username..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <button type="submit" id="login-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Sign In
+                </button>
+                <div class="text-center pt-2">
+                    <p class="text-xs text-slate-600">
+                        Belum punya akun? 
+                        <button type="button" onclick="openRegisterModal()" class="text-[#000090] font-bold hover:underline cursor-pointer">Register Disini</button>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- REGISTER MODAL -->
+    <div id="register-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 relative">
+            <button onclick="closeRegisterModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1">Create Account</h2>
+            <p class="text-xs text-slate-500 mb-6">Daftar akun baru SkyTechnology Forum.</p>
+            
+            <form onsubmit="handleRegister(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama / Username</label>
+                    <input type="text" id="reg-username" required placeholder="Masukkan Nama atau Username..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="reg-password" required placeholder="•••••••• (Min. 6 karakter)" minlength="6"
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <button type="submit" id="reg-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Register Now
+                </button>
+                <div class="text-center pt-2">
+                    <p class="text-xs text-slate-600">
+                        Sudah punya akun? 
+                        <button type="button" onclick="openLoginModal()" class="text-[#000090] font-bold hover:underline cursor-pointer">Login Disini</button>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- REQUEST ROLE MODAL (Staff & Customer Options) -->
+    <div id="request-role-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 relative">
+            <button onclick="closeRequestRoleModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-id-card text-amber-500"></i>
+                <span>Request Role Form</span>
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Pengajuan role khusus untuk akun SkyTechnology Forum Anda.</p>
+            
+            <form onsubmit="handleRequestRole(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Role yang Diminta</label>
+                    <select id="request-role-type" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090] bg-white">
+                        <option value="Customer">Customer</option>
+                        <option value="Staff">Staff</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Alasan / Bukti Pendukung</label>
+                    <textarea id="request-role-reason" required rows="4" placeholder="Tuliskan alasan pengajuan role atau ID / Bukti status Anda..." 
+                              class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]"></textarea>
+                </div>
+                <button type="submit" id="request-role-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Kirim Pengajuan Role
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN ROLE REQUESTS INBOX MODAL (ADMIN ONLY) -->
+    <div id="admin-requests-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 relative flex flex-col max-h-[85vh]">
+            <button onclick="closeAdminRoleRequestsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-inbox text-[#000090]"></i>
+                <span>Inbox Pengajuan Role (Admin Only)</span>
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Kelola pesan masuk pengajuan role Staff dan Customer dari anggota komunitas.</p>
+            
+            <div id="admin-requests-list" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1 min-h-[220px]">
+                <div class="text-center py-10 text-slate-400 text-xs">
+                    <i class="fa-solid fa-circle-notch animate-spin text-xl mb-2 text-[#000090]"></i>
+                    <p>Memuat pesan pengajuan role...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE SETTINGS MODAL (Custom Avatar Max 1MB) -->
+    <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 relative">
+            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1">Pengaturan Profil</h2>
+            <p class="text-xs text-slate-500 mb-4">Ubah foto profil Anda (Maksimal ukuran 1MB).</p>
+            
+            <form onsubmit="handleSaveProfile(event)" class="space-y-4">
+                <div class="flex flex-col items-center gap-3">
+                    <img id="profile-preview-avatar" src="https://placehold.co/100/000090/ffffff?text=ST" alt="Preview Avatar" 
+                         class="w-20 h-20 rounded-full border-2 border-[#000090] object-cover shadow">
+                    <div class="w-full">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1 text-center">Pilih Foto Profil Baru</label>
+                        <input type="file" id="profile-avatar-file" accept="image/*" onchange="handleAvatarFileSelect(event)"
+                               class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#000090] hover:file:bg-blue-100 cursor-pointer">
+                        <span class="block text-[10px] text-slate-400 text-center mt-1">*Maksimal file: 1 MB (PNG, JPG, WEBP)</span>
+                    </div>
+                </div>
+                <button type="submit" id="profile-save-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Simpan Perubahan Profil
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE ANNOUNCEMENT MODAL (ADMIN / STAFF ONLY) -->
+    <div id="announcement-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 relative">
+            <button onclick="closeAnnouncementModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1">Buat Pengumuman Baru</h2>
+            <p class="text-xs text-slate-500 mb-4">Khusus Administrator & Staff SkyTechnology.</p>
+            
+            <form onsubmit="handleCreateAnnouncement(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Judul Pengumuman</label>
+                    <input type="text" id="ann-title" required placeholder="Contoh: Pemeliharaan Sistem..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Isi Pengumuman</label>
+                    <textarea id="ann-content" required rows="4" placeholder="Tuliskan detail pengumuman resmi..." 
+                              class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]"></textarea>
+                </div>
+                <button type="submit" id="ann-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Publikasikan Pengumuman
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MANAGE STAFF MODAL (ADMIN ONLY) -->
+    <div id="manage-staff-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 relative">
+            <button onclick="closeManageStaffModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-users-gear text-[#000090]"></i>
+                <span>Tambah / Edit Staff</span>
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Masukkan data anggota tim staff baru ke dalam daftar resmi.</p>
+            
+            <form onsubmit="handleSaveStaffMember(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap / Username</label>
+                    <input type="text" id="staff-input-name" required placeholder="Contoh: Frederick Jhonatan" 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
+                        <select id="staff-input-category" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090] bg-white">
+                            <option value="Administrator">Administrator / Exec</option>
+                            <option value="Staff">Staff Team</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan / Role</label>
+                        <input type="text" id="staff-input-role" required placeholder="Contoh: Founder / Administrator" 
+                               class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Tugas / Sub-Jabatan</label>
+                    <input type="text" id="staff-input-desc" placeholder="Contoh: Chief Executive & System Controller" 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">URL Foto Profil / Avatar (Opsional)</label>
+                    <input type="text" id="staff-input-avatar" placeholder="https://..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <button type="submit" id="staff-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Simpan Anggota Staff
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT RECRUITMENT MODAL (ADMIN ONLY) -->
+    <div id="edit-recruitment-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 relative">
+            <button onclick="closeEditRecruitmentModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-[#000090]"></i>
+                <span>Edit Informasi Rekrutmen</span>
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Ubah status dan persyaratan pendaftaran bagi calon Staff dan Customer.</p>
+            
+            <form onsubmit="handleSaveRecruitmentInfo(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status Rekrutmen</label>
+                    <select id="rec-input-status" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090] bg-white">
+                        <option value="OPEN">RECRUITMENT OPEN (Buka)</option>
+                        <option value="CLOSED">RECRUITMENT CLOSED (Tutup)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Pemberitahuan Umum / Pengantar</label>
+                    <textarea id="rec-input-notice" required rows="2" class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Persyaratan Staff (Gunakan baris baru untuk tiap poin)</label>
+                    <textarea id="rec-input-staff-reqs" required rows="4" class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Persyaratan Customer (Gunakan baris baru untuk tiap poin)</label>
+                    <textarea id="rec-input-customer-reqs" required rows="4" class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]"></textarea>
+                </div>
+                <button type="submit" id="rec-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Simpan Perubahan Rekrutmen
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC WITH SUPABASE CLIENT INTEGRATION -->
+    <script>
+        // ========================================================
+        // 1. GLOBAL STATE & SUPABASE INITIALIZATION
+        // ========================================================
+        const SUPABASE_URL = "https://ubhnyqudmrkqmziooqfr.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaG55cXVkbXJrcW16aW9vcWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzY1NDgsImV4cCI6MjEwMzMxMjU0OH0.Pt5be35QWOBG8r6y4UvIhuXLi96utYKi8uaq6cFPS9Q";
+        
+        let supabaseClient = null;
+        let currentUserProfile = null;
+        let uploadedAvatarBase64 = null;
+        let localRoleRequests = []; // Fallback memory store for role requests
+
+        // DYNAMIC DATA FOR STAFF AND RECRUITMENT (Clean Empty default state)
+        let staffMembersList = [];
+
+        let recruitmentInfoData = {
+            status: 'OPEN',
+            notice: 'SkyTechnology Company membuka kesempatan bagi Anda yang ingin bergabung sebagai Staff Resmi atau memverifikasi status Anda sebagai Customer.',
+            staff_requirements: [
+                'Aktif di komunitas & forum SkyTechnology.',
+                'Memiliki integritas, kejujuran, dan komunikasi yang baik.',
+                'Siap membantu anggota komunitas dan mendukung operasional.',
+                'Mengirimkan alasan pengajuan melalui tombol Request Role.'
+            ],
+            customer_requirements: [
+                'Merupakan pelanggan resmi layanan SkyTechnology.',
+                'Melampirkan ID / Bukti status customer pada saat pengajuan.',
+                'Mendapatkan konfirmasi role otomatis setelah diverifikasi Admin.'
+            ]
+        };
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Load saved local fallback role requests & staff/recruitment data
+            try {
+                const savedReqs = localStorage.getItem('sky_role_requests');
+                if (savedReqs) localRoleRequests = JSON.parse(savedReqs);
+
+                const savedStaff = localStorage.getItem('sky_staff_members');
+                if (savedStaff) staffMembersList = JSON.parse(savedStaff);
+
+                const savedRec = localStorage.getItem('sky_recruitment_info');
+                if (savedRec) recruitmentInfoData = JSON.parse(savedRec);
+            } catch (e) {}
+
+            renderStaffList();
+            renderRecruitmentInfo();
+
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                await checkUserSession();
+                loadChatboxMessages();
+                subscribeChatboxRealtime();
+                await loadStaffMembersFromSupabase();
+                await loadRecruitmentInfoFromSupabase();
+            }
+        });
+
+        // TOAST SYSTEM (Replaces alert)
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-emerald-600' : 'bg-[#000090]';
+            
+            toast.className = `${bgClass} text-white text-xs px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all transform translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i>
+                <span class="flex-1">${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Helper: Convert clean username to synthetic email
+        function usernameToEmail(username) {
+            const clean = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            return `${clean || 'user'}@skytechnology.forum`;
+        }
+
+        // ========================================================
+        // 2. AUTHENTICATION & USER SESSION MANAGEMENT
+        // ========================================================
+        async function checkUserSession() {
+            if (!supabaseClient) return;
+
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    await fetchUserProfile(session.user.id, session.user);
+                } else {
+                    updateUserUI(null);
+                }
+            } catch (err) {
+                console.warn("Session check warning:", err);
+                updateUserUI(null);
+            }
+        }
+
+        async function fetchUserProfile(userId, authUser = null) {
+            if (!supabaseClient) return;
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            let profile = data;
+            if (!profile && authUser) {
+                const username = authUser.user_metadata?.username || authUser.email.split('@')[0];
+                profile = {
+                    id: userId,
+                    username: username,
+                    role: (username.toLowerCase() === 'frederick jhonatan') ? 'Administrator' : 'Member',
+                    avatar_url: 'https://placehold.co/100/000090/ffffff?text=ST'
+                };
+            }
+
+            // Enforce Frederick Jhonatan as Administrator
+            if (profile && profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
+                profile.role = 'Administrator';
+            }
+
+            currentUserProfile = profile;
+            updateUserUI(profile);
+        }
+
+        function updateUserUI(profile) {
+            const loggedOutView = document.getElementById('logged-out-view');
+            const loggedInView = document.getElementById('logged-in-view');
+            const adminCreateBtn = document.getElementById('admin-create-ann-btn');
+            const adminRequestsNavBtn = document.getElementById('admin-requests-nav-btn');
+            const adminStaffBtn = document.getElementById('admin-manage-staff-btn');
+            const adminRecruitmentBtn = document.getElementById('admin-edit-recruitment-btn');
+
+            if (profile) {
+                if (loggedOutView) loggedOutView.classList.add('hidden');
+                if (loggedInView) loggedInView.classList.remove('hidden');
+
+                const nameElem = document.getElementById('user-display-name');
+                const avatarElem = document.getElementById('user-avatar');
+                const roleBadge = document.getElementById('user-role-badge');
+
+                // Enforce Frederick Jhonatan as Administrator
+                if (profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
+                    profile.role = 'Administrator';
+                }
+
+                if (nameElem) nameElem.innerText = profile.username || 'User';
+                if (avatarElem) avatarElem.src = profile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
+                
+                // Color badges: Staff = Biru, Customer = Hijau, Admin = Amber, Member = Blue-Slate
+                if (roleBadge) {
+                    roleBadge.innerText = profile.role || 'Member';
+                    if (profile.role === 'Administrator') {
+                        roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 border border-amber-300';
+                    } else if (profile.role === 'Staff') {
+                        roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white border border-blue-400';
+                    } else if (profile.role === 'Customer') {
+                        roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white border border-emerald-400';
+                    } else {
+                        roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-900 text-blue-100 border border-blue-700';
+                    }
+                }
+
+                const isAdminOrStaff = (profile.role === 'Administrator' || profile.role === 'Staff');
+                if (adminCreateBtn) {
+                    if (isAdminOrStaff) adminCreateBtn.classList.remove('hidden');
+                    else adminCreateBtn.classList.add('hidden');
+                }
+
+                if (adminRequestsNavBtn) {
+                    if (isAdminOrStaff) {
+                        adminRequestsNavBtn.classList.remove('hidden');
+                        updateRoleRequestsBadgeCount();
+                    } else {
+                        adminRequestsNavBtn.classList.add('hidden');
+                    }
+                }
+
+                if (adminStaffBtn) {
+                    if (isAdminOrStaff) adminStaffBtn.classList.remove('hidden');
+                    else adminStaffBtn.classList.add('hidden');
+                }
+
+                if (adminRecruitmentBtn) {
+                    if (isAdminOrStaff) adminRecruitmentBtn.classList.remove('hidden');
+                    else adminRecruitmentBtn.classList.add('hidden');
+                }
+            } else {
+                if (loggedOutView) loggedOutView.classList.remove('hidden');
+                if (loggedInView) loggedInView.classList.add('hidden');
+                if (adminCreateBtn) adminCreateBtn.classList.add('hidden');
+                if (adminRequestsNavBtn) adminRequestsNavBtn.classList.add('hidden');
+                if (adminStaffBtn) adminStaffBtn.classList.add('hidden');
+                if (adminRecruitmentBtn) adminRecruitmentBtn.classList.add('hidden');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('login-submit-btn');
+
+            if (!supabaseClient) {
+                showToast('Supabase client tidak terhubung.', 'error');
+                return;
+            }
+
+            const targetEmail = usernameInput.includes('@') ? usernameInput : usernameToEmail(usernameInput);
+
+            btn.disabled = true;
+            btn.innerText = 'Signing In...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: targetEmail,
+                    password: password
+                });
+
+                btn.disabled = false;
+                btn.innerText = 'Sign In';
+
+                if (error) {
+                    showToast('Login Gagal: ' + error.message, 'error');
+                } else {
+                    showToast('Login berhasil! Selamat datang kembali.', 'success');
+                    closeLoginModal();
+                    await checkUserSession();
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = 'Sign In';
+                showToast('Terjadi kesalahan: ' + err.message, 'error');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const btn = document.getElementById('reg-submit-btn');
+
+            if (!supabaseClient) {
+                showToast('Supabase client tidak terhubung.', 'error');
+                return;
+            }
+
+            const generatedEmail = usernameToEmail(username);
+
+            btn.disabled = true;
+            btn.innerText = 'Creating Account...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: generatedEmail,
+                    password: password,
+                    options: {
+                        data: { username: username }
+                    }
+                });
+
+                btn.disabled = false;
+                btn.innerText = 'Register Now';
+
+                if (error) {
+                    showToast('Pendaftaran Gagal: ' + error.message, 'error');
+                } else {
+                    const { error: autoLoginErr } = await supabaseClient.auth.signInWithPassword({
+                        email: generatedEmail,
+                        password: password
+                    });
+
+                    if (autoLoginErr) {
+                        showToast('Registrasi Berhasil! Silakan Sign In dengan Nama / Username Anda.', 'success');
+                        closeRegisterModal();
+                        openLoginModal();
+                        document.getElementById('login-username').value = username;
+                    } else {
+                        showToast('Registrasi Berhasil! Anda otomatis masuk.', 'success');
+                        closeRegisterModal();
+                        await checkUserSession();
+                    }
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = 'Register Now';
+                showToast('Terjadi kesalahan: ' + err.message, 'error');
+            }
+        }
+
+        async function handleLogout() {
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            currentUserProfile = null;
+            updateUserUI(null);
+            showToast('Anda telah logout.', 'info');
+        }
+
+        // ========================================================
+        // 4. REQUEST ROLE LOGIC & ADMIN INBOX MANAGEMENT
+        // ========================================================
+        function openRequestRoleModal() {
+            if (!currentUserProfile) {
+                showToast('Silakan login terlebih dahulu untuk mengajukan role.', 'info');
+                openLoginModal();
+                return;
+            }
+            document.getElementById('request-role-modal').classList.remove('hidden');
+        }
+
+        function closeRequestRoleModal() {
+            document.getElementById('request-role-modal').classList.add('hidden');
+        }
+
+        async function handleRequestRole(e) {
+            e.preventDefault();
+            if (!currentUserProfile) return;
+
+            const roleType = document.getElementById('request-role-type').value;
+            const reason = document.getElementById('request-role-reason').value.trim();
+            const btn = document.getElementById('request-role-btn');
+
+            btn.disabled = true;
+            btn.innerText = 'Mengirim Pesan Request...';
+
+            const newRequestObj = {
+                id: 'req_' + Date.now(),
+                user_id: currentUserProfile.id,
+                username: currentUserProfile.username,
+                avatar_url: currentUserProfile.avatar_url,
+                requested_role: roleType,
+                reason: reason,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            };
+
+            if (supabaseClient) {
+                await supabaseClient
+                    .from('role_requests')
+                    .insert([{
+                        user_id: currentUserProfile.id,
+                        username: currentUserProfile.username,
+                        requested_role: roleType,
+                        reason: reason,
+                        status: 'pending'
+                    }]);
+            }
+
+            localRoleRequests.unshift(newRequestObj);
+            try {
+                localStorage.setItem('sky_role_requests', JSON.stringify(localRoleRequests));
+            } catch (err) {}
+
+            btn.disabled = false;
+            btn.innerText = 'Kirim Pengajuan Role';
+            closeRequestRoleModal();
+            document.getElementById('request-role-reason').value = '';
+
+            showToast(`Pengajuan role ${roleType} berhasil dikirim ke Inbox Admin!`, 'success');
+            updateRoleRequestsBadgeCount();
+        }
+
+        function updateRoleRequestsBadgeCount() {
+            const badge = document.getElementById('role-requests-badge-count');
+            if (!badge) return;
+
+            const pendingCount = localRoleRequests.filter(r => r.status === 'pending').length;
+            if (pendingCount > 0) {
+                badge.innerText = pendingCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        async function openAdminRoleRequestsModal() {
+            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
+                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+                return;
+            }
+
+            document.getElementById('admin-requests-modal').classList.remove('hidden');
+            await renderAdminRoleRequests();
+        }
+
+        function closeAdminRoleRequestsModal() {
+            document.getElementById('admin-requests-modal').classList.add('hidden');
+        }
+
+        async function renderAdminRoleRequests() {
+            const container = document.getElementById('admin-requests-list');
+            if (!container) return;
+
+            let requestsList = [...localRoleRequests];
+
+            if (supabaseClient) {
+                const { data, error } = await supabaseClient
+                    .from('role_requests')
+                    .select('*, profiles(avatar_url)')
+                    .order('created_at', { ascending: false });
+
+                if (data && data.length > 0) {
+                    requestsList = data;
+                }
+            }
+
+            if (!requestsList || requestsList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 text-xs">
+                        <i class="fa-solid fa-inbox text-3xl mb-2 text-slate-300"></i>
+                        <p>Belum ada pesan pengajuan role masuk saat ini.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            requestsList.forEach(req => {
+                const isPending = (req.status === 'pending' || !req.status);
+                const isStaff = req.requested_role === 'Staff';
+                const roleColorClass = isStaff ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white';
+                const dateStr = new Date(req.created_at || Date.now()).toLocaleString();
+                const avatar = req.avatar_url || (req.profiles && req.profiles.avatar_url) || 'https://placehold.co/100/000090/ffffff?text=ST';
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-lg border text-xs space-y-3 transition ${
+                    isPending ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200 opacity-80'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <img src="${escapeHtml(avatar)}" alt="${escapeHtml(req.username)}" class="w-8 h-8 rounded-full border border-blue-200 object-cover">
+                            <div>
+                                <span class="font-bold text-slate-900 text-xs">${escapeHtml(req.username)}</span>
+                                <span class="block text-[10px] text-slate-400 font-mono">${dateStr}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold ${roleColorClass}">
+                                Requested: ${escapeHtml(req.requested_role)}
+                            </span>
+                            <span class="text-[10px] px-2 py-0.5 rounded font-semibold ${
+                                req.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                                req.status === 'denied' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                            }">
+                                ${escapeHtml(req.status ? req.status.toUpperCase() : 'PENDING')}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3 rounded border border-slate-200/80 text-slate-700 leading-relaxed whitespace-pre-line text-xs">
+                        <span class="font-semibold text-slate-900 block mb-0.5">Alasan / Catatan Pengajuan:</span>
+                        ${escapeHtml(req.reason)}
+                    </div>
+
+                    ${isPending ? `
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-200/60">
+                            <button onclick="processRoleRequest('${req.id}', '${req.user_id}', '${escapeHtml(req.username)}', '${req.requested_role}', 'denied')" 
+                                    class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded text-[11px] transition cursor-pointer flex items-center gap-1">
+                                <i class="fa-solid fa-xmark"></i> Denied Role
+                            </button>
+                            <button onclick="processRoleRequest('${req.id}', '${req.user_id}', '${escapeHtml(req.username)}', '${req.requested_role}', 'approved')" 
+                                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[11px] transition cursor-pointer flex items-center gap-1 shadow-sm">
+                                <i class="fa-solid fa-check"></i> Accept Role
+                            </button>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function processRoleRequest(reqId, userId, targetUsername, requestedRole, action) {
+            const newStatus = action === 'approved' ? 'approved' : 'denied';
+
+            const localIndex = localRoleRequests.findIndex(r => r.id === reqId || r.user_id === userId);
+            if (localIndex !== -1) {
+                localRoleRequests[localIndex].status = newStatus;
+                try {
+                    localStorage.setItem('sky_role_requests', JSON.stringify(localRoleRequests));
+                } catch (e) {}
+            }
+
+            if (supabaseClient) {
+                if (action === 'approved') {
+                    await supabaseClient
+                        .from('profiles')
+                        .update({ role: requestedRole })
+                        .eq('id', userId);
+                }
+
+                await supabaseClient
+                    .from('role_requests')
+                    .update({ status: newStatus })
+                    .eq('id', reqId);
+            }
+
+            if (currentUserProfile && currentUserProfile.id === userId && action === 'approved') {
+                currentUserProfile.role = requestedRole;
+                updateUserUI(currentUserProfile);
+            }
+
+            showToast(action === 'approved' 
+                ? `Role ${requestedRole} untuk ${targetUsername} berhasil disetujui (Accept)!` 
+                : `Pengajuan role ${targetUsername} telah ditolak (Denied).`, 
+                action === 'approved' ? 'success' : 'info'
+            );
+
+            updateRoleRequestsBadgeCount();
+            await renderAdminRoleRequests();
+        }
+
+        // ========================================================
+        // 5. PROFILE PICTURE UPLOAD HANDLER (MAX 1MB)
+        // ========================================================
+        function openProfileModal() {
+            if (!currentUserProfile) return;
+            const preview = document.getElementById('profile-preview-avatar');
+            if (preview) preview.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        function handleAvatarFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 1024 * 1024) {
+                showToast('Ukuran file foto melebihi batas 1MB! Pilih file yang lebih kecil.', 'error');
+                e.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedAvatarBase64 = event.target.result;
+                const preview = document.getElementById('profile-preview-avatar');
+                if (preview) preview.src = uploadedAvatarBase64;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handleSaveProfile(e) {
+            e.preventDefault();
+            if (!currentUserProfile) return;
+
+            const btn = document.getElementById('profile-save-btn');
+
+            if (!uploadedAvatarBase64) {
+                showToast('Pilih file foto profil terlebih dahulu.', 'info');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Menyimpan...';
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .update({ avatar_url: uploadedAvatarBase64 })
+                    .eq('id', currentUserProfile.id);
+
+                if (error) {
+                    showToast('Gagal mengubah foto profil: ' + error.message, 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Simpan Perubahan Profil';
+                    return;
+                }
+            }
+
+            currentUserProfile.avatar_url = uploadedAvatarBase64;
+            updateUserUI(currentUserProfile);
+            btn.disabled = false;
+            btn.innerText = 'Simpan Perubahan Profil';
+            closeProfileModal();
+            showToast('Foto profil Anda berhasil diperbarui!', 'success');
+        }
+
+        // ========================================================
+        // 6. REALTIME CHATBOX LOGIC WITH FALLBACK
+        // ========================================================
+        let chatboxPollingInterval = null;
+
+        async function loadChatboxMessages() {
+            if (!supabaseClient) return;
+
+            const { data, error } = await supabaseClient
+                .from('chatbox_messages')
+                .select('*, profiles(avatar_url)')
+                .order('created_at', { ascending: true })
+                .limit(50);
+
+            if (data && data.length > 0) {
+                const emptyNotice = document.getElementById('chatbox-empty-notice');
+                if (emptyNotice) emptyNotice.remove();
+
+                const container = document.getElementById('chatbox-messages');
+                container.innerHTML = '';
+                data.forEach(msg => appendChatMessageDOM(msg));
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function startPollingFallback() {
+            if (chatboxPollingInterval) return;
+            chatboxPollingInterval = setInterval(() => {
+                loadChatboxMessages();
+            }, 4000);
+        }
+
+        function subscribeChatboxRealtime() {
+            if (!supabaseClient) return;
+
+            try {
+                const testWs = new WebSocket('wss://' + (window.location.host || 'localhost'));
+                testWs.close();
+            } catch (wsSecurityErr) {
+                startPollingFallback();
+                return;
+            }
+
+            try {
+                const channel = supabaseClient.channel('chatbox-channel');
+                channel
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatbox_messages' }, payload => {
+                        const emptyNotice = document.getElementById('chatbox-empty-notice');
+                        if (emptyNotice) emptyNotice.remove();
+                        
+                        appendChatMessageDOM(payload.new);
+                        const container = document.getElementById('chatbox-messages');
+                        container.scrollTop = container.scrollHeight;
+                    })
+                    .subscribe((status, err) => {
+                        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED' || err) {
+                            startPollingFallback();
+                        }
+                    });
+            } catch (e) {
+                startPollingFallback();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            if (!currentUserProfile) {
+                showToast('Silakan login terlebih dahulu untuk mengirim pesan.', 'info');
+                openLoginModal();
+                return;
+            }
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('chatbox_messages')
+                    .insert([{
+                        user_id: currentUserProfile.id,
+                        username: currentUserProfile.username,
+                        message: message
+                    }]);
+
+                if (error) {
+                    showToast('Gagal mengirim pesan: ' + error.message, 'error');
+                } else {
+                    loadChatboxMessages();
+                }
+            } else {
+                const emptyNotice = document.getElementById('chatbox-empty-notice');
+                if (emptyNotice) emptyNotice.remove();
+                appendChatMessageDOM({
+                    username: currentUserProfile.username,
+                    avatar_url: currentUserProfile.avatar_url,
+                    message: message,
+                    created_at: new Date().toISOString()
+                });
+            }
+            input.value = '';
+        }
+
+        function appendChatMessageDOM(msg) {
+            const container = document.getElementById('chatbox-messages');
+            if (!container) return;
+            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const avatar = msg.avatar_url 
+                || (msg.profiles && msg.profiles.avatar_url) 
+                || (currentUserProfile && msg.user_id === currentUserProfile.id ? currentUserProfile.avatar_url : null) 
+                || 'https://placehold.co/100/000090/ffffff?text=ST';
+
+            const msgElement = document.createElement('div');
+            msgElement.className = 'flex items-start gap-2.5 text-xs py-1.5 border-b border-slate-100';
+            msgElement.innerHTML = `
+                <img src="${escapeHtml(avatar)}" alt="${escapeHtml(msg.username)}" 
+                     class="w-7 h-7 rounded-full border border-blue-200 object-cover flex-shrink-0 mt-0.5 shadow-sm"
+                     onerror="this.onerror=null; this.src='https://placehold.co/100/000090/ffffff?text=ST';">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-[#000090] text-xs truncate">${escapeHtml(msg.username)}</span>
+                        <span class="text-[10px] text-slate-400 font-mono ml-2">${timeStr}</span>
+                    </div>
+                    <p class="text-slate-700 text-xs break-words leading-snug mt-0.5">${escapeHtml(msg.message)}</p>
+                </div>
+            `;
+            container.appendChild(msgElement);
+        }
+
+        // ========================================================
+        // 7. ANNOUNCEMENTS LOGIC (ADMIN & STAFF ONLY POSTING)
+        // ========================================================
+        async function loadAnnouncements() {
+            const container = document.getElementById('announcements-list-detailed');
+            if (!container) return;
+
+            if (!supabaseClient) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-xs">
+                        <i class="fa-solid fa-bullhorn text-2xl text-slate-300 mb-2"></i>
+                        <p>Belum ada pengumuman resmi saat ini.</p>
+                    </div>`;
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('announcements')
+                .select('*')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            if (data && data.length > 0) {
+                container.innerHTML = '';
+                data.forEach(ann => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-blue-50/60 border border-blue-100 border-l-4 border-l-[#000090] p-4 rounded-r-lg shadow-sm space-y-2';
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-[#000090] font-display">${escapeHtml(ann.title)}</h3>
+                            <span class="text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-semibold">${new Date(ann.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line">${escapeHtml(ann.content)}</p>
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-400 text-xs">
+                        <i class="fa-solid fa-bullhorn text-3xl mb-2 text-slate-300"></i>
+                        <p>Belum ada pengumuman resmi yang dipublikasikan.</p>
+                    </div>`;
+            }
+        }
+
+        async function handleCreateAnnouncement(e) {
+            e.preventDefault();
+            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
+                showToast('Akses Ditolak: Hanya Administrator dan Staff yang dapat mempublikasikan pengumuman.', 'error');
+                return;
+            }
+
+            const title = document.getElementById('ann-title').value.trim();
+            const content = document.getElementById('ann-content').value.trim();
+            const btn = document.getElementById('ann-submit-btn');
+
+            if (!supabaseClient) {
+                showToast('Supabase client tidak terhubung.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Publishing...';
+
+            const { error } = await supabaseClient
+                .from('announcements')
+                .insert([{
+                    title: title,
+                    content: content,
+                    author_id: currentUserProfile.id
+                }]);
+
+            btn.disabled = false;
+            btn.innerText = 'Publikasikan Pengumuman';
+
+            if (error) {
+                showToast('Gagal mempublikasikan: ' + error.message, 'error');
+            } else {
+                showToast('Pengumuman berhasil dipublikasikan!', 'success');
+                closeAnnouncementModal();
+                document.getElementById('ann-title').value = '';
+                document.getElementById('ann-content').value = '';
+                loadAnnouncements();
+            }
+        }
+
+        // ========================================================
+        // 8. LIVE SEARCH SYSTEM
+        // ========================================================
+        function handleSearchInput(query) {
+            const dropdown = document.getElementById('search-results-dropdown');
+            const clearBtn = document.getElementById('search-clear-btn');
+            const q = query.trim().toLowerCase();
+
+            if (!q) {
+                if (dropdown) dropdown.classList.add('hidden');
+                if (clearBtn) clearBtn.classList.add('hidden');
+                return;
+            }
+
+            if (clearBtn) clearBtn.classList.remove('hidden');
+
+            const results = [];
+
+            // 1. Search Subforums
+            const subforums = [
+                { title: 'Announcement', desc: 'Official news for SkyTechnology', icon: 'fa-bullhorn', tab: 'Announcement' },
+                { title: 'List Staff', desc: 'Daftar jajaran pimpinan dan staff', icon: 'fa-users-gear', tab: 'List Staff' },
+                { title: 'Recruitment Information', desc: 'Informasi lowongan role & staff', icon: 'fa-user-plus', tab: 'Recruitment' }
+            ];
+
+            subforums.forEach(sf => {
+                if (sf.title.toLowerCase().includes(q) || sf.desc.toLowerCase().includes(q)) {
+                    results.push({
+                        type: 'Subforum',
+                        title: sf.title,
+                        subtitle: sf.desc,
+                        icon: sf.icon,
+                        action: () => openSubforum(sf.tab)
+                    });
+                }
+            });
+
+            if (dropdown) {
+                if (results.length === 0) {
+                    dropdown.innerHTML = `<div class="p-3 text-center text-slate-400">Tidak ada hasil ditemukan untuk "${escapeHtml(query)}"</div>`;
+                } else {
+                    dropdown.innerHTML = results.map((item, idx) => `
+                        <div onclick="executeSearchResult(${idx})" class="p-2.5 hover:bg-slate-100 rounded-md cursor-pointer flex items-center gap-2.5 transition">
+                            <i class="fa-solid ${item.icon} text-blue-700 text-sm"></i>
+                            <div class="min-w-0 flex-1">
+                                <div class="font-bold text-slate-900 truncate">${escapeHtml(item.title)}</div>
+                                <div class="text-[11px] text-slate-500 truncate">${escapeHtml(item.subtitle)}</div>
+                            </div>
+                            <span class="text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">${item.type}</span>
+                        </div>
+                    `).join('');
+
+                    window.currentSearchResults = results;
+                }
+                dropdown.classList.remove('hidden');
+            }
+        }
+
+        function executeSearchResult(index) {
+            if (window.currentSearchResults && window.currentSearchResults[index]) {
+                window.currentSearchResults[index].action();
+                clearSearchInput();
+            }
+        }
+
+        function clearSearchInput() {
+            const input = document.getElementById('forum-search-input');
+            const dropdown = document.getElementById('search-results-dropdown');
+            const clearBtn = document.getElementById('search-clear-btn');
+            if (input) input.value = '';
+            if (dropdown) dropdown.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            const searchContainer = document.getElementById('forum-search-input')?.parentElement;
+            const dropdown = document.getElementById('search-results-dropdown');
+            if (searchContainer && !searchContainer.contains(e.target) && dropdown) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // ========================================================
+        // 9. DYNAMIC LIST STAFF & RECRUITMENT MANAGERS WITH SUPABASE INTEGRATION
+        // ========================================================
+        async function loadStaffMembersFromSupabase() {
+            if (!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('staff_members')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+
+                if (!error && data) {
+                    staffMembersList = data;
+                    renderStaffList();
+                }
+            } catch (e) {
+                console.warn('Error loading staff members from Supabase:', e);
+            }
+        }
+
+        async function loadRecruitmentInfoFromSupabase() {
+            if (!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('recruitment_info')
+                    .select('*')
+                    .eq('id', 1)
+                    .single();
+
+                if (!error && data) {
+                    recruitmentInfoData = {
+                        status: data.status,
+                        notice: data.notice,
+                        staff_requirements: data.staff_requirements || [],
+                        customer_requirements: data.customer_requirements || []
+                    };
+                    renderRecruitmentInfo();
+                }
+            } catch (e) {
+                console.warn('Error loading recruitment info from Supabase:', e);
+            }
+        }
+
+        function renderStaffList() {
+            const container = document.getElementById('staff-directory-content');
+            if (!container) return;
+
+            const admins = staffMembersList.filter(s => s.category === 'Administrator');
+            const staffs = staffMembersList.filter(s => s.category !== 'Administrator');
+
+            const isAdmin = currentUserProfile && (currentUserProfile.role === 'Administrator' || currentUserProfile.role === 'Staff');
+
+            if (staffMembersList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 text-xs space-y-2">
+                        <i class="fa-solid fa-users-gear text-3xl mb-1 text-slate-300"></i>
+                        <p>Daftar staff belum diisi.</p>
+                        ${isAdmin ? `<p class="text-[11px] text-blue-600 font-semibold">Gunakan tombol "Tambah / Kelola Staff" di atas untuk menambahkan anggota staff secara manual.</p>` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            if (admins.length > 0) {
+                html += `
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-crown text-amber-500"></i> Executive & Administrator
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                `;
+
+                admins.forEach(s => {
+                    html += `
+                        <div class="p-3.5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl flex items-center justify-between gap-3 shadow-sm relative group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-12 h-12 rounded-full border-2 border-amber-400 overflow-hidden flex-shrink-0 shadow">
+                                    <img src="${escapeHtml(s.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST')}" alt="${escapeHtml(s.name)}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5 truncate">
+                                        <span class="truncate">${escapeHtml(s.name)}</span>
+                                        ${s.verified ? '<i class="fa-solid fa-circle-check text-blue-600 text-xs" title="Verified Staff"></i>' : ''}
+                                    </div>
+                                    <span class="inline-block px-2 py-0.5 mt-0.5 text-[10px] font-extrabold bg-amber-500 text-slate-950 rounded">${escapeHtml(s.role_title)}</span>
+                                    <p class="text-[10px] text-slate-500 mt-1 truncate">${escapeHtml(s.description)}</p>
+                                </div>
+                            </div>
+                            ${isAdmin ? `
+                                <button onclick="deleteStaffMember('${s.id}')" title="Hapus Staff" class="text-red-400 hover:text-red-600 text-xs p-1 cursor-pointer transition opacity-70 hover:opacity-100">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+                </div>
+                `;
+            }
+
+            if (staffs.length > 0) {
+                html += `
+                <div class="space-y-3 pt-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-shield text-blue-600"></i> Active Staff Team
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                `;
+
+                staffs.forEach(s => {
+                    html += `
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 relative group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full border border-blue-400 overflow-hidden flex-shrink-0">
+                                    <img src="${escapeHtml(s.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST')}" alt="${escapeHtml(s.name)}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="font-bold text-xs text-slate-800 block truncate">${escapeHtml(s.name)}</span>
+                                    <span class="inline-block px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded mt-0.5">${escapeHtml(s.role_title)}</span>
+                                    <span class="text-[10px] text-slate-400 block mt-0.5 truncate">${escapeHtml(s.description)}</span>
+                                </div>
+                            </div>
+                            ${isAdmin ? `
+                                <button onclick="deleteStaffMember('${s.id}')" title="Hapus Staff" class="text-red-400 hover:text-red-600 text-xs p-1 cursor-pointer transition opacity-70 hover:opacity-100">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+                </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function openManageStaffModal() {
+            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
+                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+                return;
+            }
+            document.getElementById('manage-staff-modal').classList.remove('hidden');
+        }
+
+        function closeManageStaffModal() {
+            document.getElementById('manage-staff-modal').classList.add('hidden');
+        }
+
+        async function handleSaveStaffMember(e) {
+            e.preventDefault();
+            const name = document.getElementById('staff-input-name').value.trim();
+            const category = document.getElementById('staff-input-category').value;
+            const roleTitle = document.getElementById('staff-input-role').value.trim();
+            const desc = document.getElementById('staff-input-desc').value.trim();
+            const avatar = document.getElementById('staff-input-avatar').value.trim();
+
+            const newStaff = {
+                name: name,
+                category: category,
+                role_title: roleTitle,
+                description: desc,
+                avatar_url: avatar || 'https://placehold.co/100/000090/ffffff?text=ST',
+                verified: true
+            };
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('staff_members')
+                    .insert([newStaff]);
+
+                if (error) {
+                    showToast('Gagal menyimpan staff ke database: ' + error.message, 'error');
+                } else {
+                    showToast(`Anggota staff "${name}" berhasil disimpan ke database!`, 'success');
+                    await loadStaffMembersFromSupabase();
+                }
+            } else {
+                newStaff.id = 'st_' + Date.now();
+                staffMembersList.push(newStaff);
+                try { localStorage.setItem('sky_staff_members', JSON.stringify(staffMembersList)); } catch (err) {}
+                renderStaffList();
+                showToast(`Anggota staff "${name}" berhasil ditambahkan!`, 'success');
+            }
+
+            closeManageStaffModal();
+            document.getElementById('staff-input-name').value = '';
+            document.getElementById('staff-input-role').value = '';
+            document.getElementById('staff-input-desc').value = '';
+            document.getElementById('staff-input-avatar').value = '';
+        }
+
+        async function deleteStaffMember(id) {
+            if (supabaseClient && typeof id === 'string' && id.includes('-')) {
+                const { error } = await supabaseClient
+                    .from('staff_members')
+                    .delete()
+                    .eq('id', id);
+
+                if (!error) {
+                    showToast('Anggota staff telah dihapus dari database.', 'info');
+                    await loadStaffMembersFromSupabase();
+                    return;
+                }
+            }
+
+            staffMembersList = staffMembersList.filter(s => s.id !== id);
+            try {
+                localStorage.setItem('sky_staff_members', JSON.stringify(staffMembersList));
+            } catch (e) {}
+
+            renderStaffList();
+            showToast('Anggota staff telah dihapus.', 'info');
+        }
+
+        function renderRecruitmentInfo() {
+            const badge = document.getElementById('recruitment-status-badge');
+            const noticeText = document.getElementById('recruitment-notice-text');
+            const staffReqsContainer = document.getElementById('recruitment-staff-reqs');
+            const customerReqsContainer = document.getElementById('recruitment-customer-reqs');
+
+            if (badge) {
+                if (recruitmentInfoData.status === 'OPEN') {
+                    badge.className = 'px-3 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-xs font-bold rounded-full flex items-center gap-1.5 flex-shrink-0';
+                    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> RECRUITMENT OPEN';
+                } else {
+                    badge.className = 'px-3 py-1 bg-red-500/10 text-red-600 border border-red-500/30 text-xs font-bold rounded-full flex items-center gap-1.5 flex-shrink-0';
+                    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> RECRUITMENT CLOSED';
+                }
+            }
+
+            if (noticeText) {
+                noticeText.innerText = recruitmentInfoData.notice;
+            }
+
+            if (staffReqsContainer) {
+                staffReqsContainer.innerHTML = recruitmentInfoData.staff_requirements.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+            }
+
+            if (customerReqsContainer) {
+                customerReqsContainer.innerHTML = recruitmentInfoData.customer_requirements.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+            }
+        }
+
+        function openEditRecruitmentModal() {
+            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
+                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+                return;
+            }
+
+            document.getElementById('rec-input-status').value = recruitmentInfoData.status;
+            document.getElementById('rec-input-notice').value = recruitmentInfoData.notice;
+            document.getElementById('rec-input-staff-reqs').value = recruitmentInfoData.staff_requirements.join('\n');
+            document.getElementById('rec-input-customer-reqs').value = recruitmentInfoData.customer_requirements.join('\n');
+
+            document.getElementById('edit-recruitment-modal').classList.remove('hidden');
+        }
+
+        function closeEditRecruitmentModal() {
+            document.getElementById('edit-recruitment-modal').classList.add('hidden');
+        }
+
+        async function handleSaveRecruitmentInfo(e) {
+            e.preventDefault();
+            const status = document.getElementById('rec-input-status').value;
+            const notice = document.getElementById('rec-input-notice').value.trim();
+            const staffReqsText = document.getElementById('rec-input-staff-reqs').value.trim();
+            const customerReqsText = document.getElementById('rec-input-customer-reqs').value.trim();
+
+            const updatedData = {
+                id: 1,
+                status: status,
+                notice: notice,
+                staff_requirements: staffReqsText.split('\n').filter(line => line.trim().length > 0),
+                customer_requirements: customerReqsText.split('\n').filter(line => line.trim().length > 0),
+                updated_at: new Date().toISOString()
+            };
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('recruitment_info')
+                    .upsert(updatedData);
+
+                if (error) {
+                    showToast('Gagal memperbarui info rekrutmen: ' + error.message, 'error');
+                } else {
+                    showToast('Informasi rekrutmen berhasil disimpan ke database!', 'success');
+                    await loadRecruitmentInfoFromSupabase();
+                }
+            } else {
+                recruitmentInfoData.status = status;
+                recruitmentInfoData.notice = notice;
+                recruitmentInfoData.staff_requirements = updatedData.staff_requirements;
+                recruitmentInfoData.customer_requirements = updatedData.customer_requirements;
+                try { localStorage.setItem('sky_recruitment_info', JSON.stringify(recruitmentInfoData)); } catch (err) {}
+                renderRecruitmentInfo();
+                showToast('Informasi rekrutmen berhasil diperbarui!', 'success');
+            }
+
+            closeEditRecruitmentModal();
+        }
+
+        // ========================================================
+        // 10. GENERAL UI & NAVIGATION CONTROLS
+        // ========================================================
+        function enterForum() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    document.getElementById('landing-page').classList.add('hidden');
+                    document.getElementById('forum-app').classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                }, 1500);
+            } else {
+                document.getElementById('landing-page').classList.add('hidden');
+                document.getElementById('forum-app').classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function switchTab(tab) {
+            const viewHome = document.getElementById('view-home');
+            const viewAnn = document.getElementById('view-announcements');
+            const viewStaff = document.getElementById('view-list-staff');
+            const viewRecruitment = document.getElementById('view-recruitment');
+            const breadcrumb = document.getElementById('breadcrumb-current');
+
+            if (tab === 'home') {
+                if (viewHome) viewHome.classList.remove('hidden');
+                if (viewAnn) viewAnn.classList.add('hidden');
+                if (viewStaff) viewStaff.classList.add('hidden');
+                if (viewRecruitment) viewRecruitment.classList.add('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Forums';
+            }
+        }
+
+        function openSubforum(name) {
+            const viewHome = document.getElementById('view-home');
+            const viewAnn = document.getElementById('view-announcements');
+            const viewStaff = document.getElementById('view-list-staff');
+            const viewRecruitment = document.getElementById('view-recruitment');
+            const breadcrumb = document.getElementById('breadcrumb-current');
+
+            if (viewHome) viewHome.classList.add('hidden');
+            if (viewAnn) viewAnn.classList.add('hidden');
+            if (viewStaff) viewStaff.classList.add('hidden');
+            if (viewRecruitment) viewRecruitment.classList.add('hidden');
+
+            if (name === 'Announcement') {
+                if (viewAnn) viewAnn.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Announcement';
+                loadAnnouncements();
+            } else if (name === 'List Staff') {
+                if (viewStaff) viewStaff.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'List Staff';
+            } else if (name === 'Recruitment' || name === 'Recruitment Information') {
+                if (viewRecruitment) viewRecruitment.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Recruitment Information';
+            }
+        }
+
+        function openLoginModal() {
+            closeRegisterModal();
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+        function openRegisterModal() {
+            closeLoginModal();
+            document.getElementById('register-modal').classList.remove('hidden');
+        }
+        function closeRegisterModal() {
+            document.getElementById('register-modal').classList.add('hidden');
+        }
+        function openCreateAnnouncementModal() {
+            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
+                showToast('Hanya Administrator dan Staff yang dapat membuat pengumuman!', 'error');
+                return;
+            }
+            document.getElementById('announcement-modal').classList.remove('hidden');
+        }
+        function closeAnnouncementModal() {
+            document.getElementById('announcement-modal').classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        function showRulesModal() {
+            showToast('Rules SkyTechnology Forum:\n1. Be respectful to all members.\n2. No spam or advertising.\n3. Follow roleplay & company guidelines.', 'info');
+        }
+    </script>
+</body>
+</html>
