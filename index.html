@@ -1447,6 +1447,69 @@
             await renderAdminRoleRequests();
         }
 
+        async function processRoleRequest(reqId, userId, targetUsername, requestedRole, action) {
+            const newStatus = action === 'approved' ? 'approved' : 'denied';
+
+            // 1. Update status di local storage
+            const localIndex = localRoleRequests.findIndex(r => r.id === reqId || (userId && r.user_id === userId) || (targetUsername && r.username === targetUsername));
+            if (localIndex !== -1) {
+                localRoleRequests[localIndex].status = newStatus;
+                try {
+                    localStorage.setItem('sky_role_requests', JSON.stringify(localRoleRequests));
+                } catch (e) {}
+            }
+
+            // 2. Update di Supabase Database
+            if (supabaseClient) {
+                if (action === 'approved') {
+                    // Update role di tabel profiles berdasarkan user_id
+                    let { error: profErr } = await supabaseClient
+                        .from('profiles')
+                        .update({ role: requestedRole })
+                        .eq('id', userId);
+
+                    // Fallback: Jika ID tidak cocok/kosong, coba update berdasarkan username
+                    if (profErr || !userId) {
+                        const { error: profErr2 } = await supabaseClient
+                            .from('profiles')
+                            .update({ role: requestedRole })
+                            .eq('username', targetUsername);
+                        if (profErr2) {
+                            console.warn("Update profile error:", profErr || profErr2);
+                        }
+                    }
+                }
+
+                // Update status di tabel role_requests
+                const { error: reqErr } = await supabaseClient
+                    .from('role_requests')
+                    .update({ status: newStatus })
+                    .eq('id', reqId);
+
+                if (reqErr) {
+                    console.warn("Update role_requests error:", reqErr);
+                }
+            }
+
+            // 3. Jika user yang disetujui adalah akun yang sedang login saat ini
+            if (currentUserProfile && (currentUserProfile.id === userId || currentUserProfile.username === targetUsername) && action === 'approved') {
+                currentUserProfile.role = requestedRole;
+                updateUserUI(currentUserProfile);
+            }
+
+            // 4. Refresh pesan chatbox agar warna & status role langsung berubah
+            await loadChatboxMessages();
+
+            showToast(action === 'approved' 
+                ? `Role ${requestedRole} untuk ${targetUsername} berhasil disetujui!` 
+                : `Pengajuan role ${targetUsername} telah ditolak.`, 
+                action === 'approved' ? 'success' : 'info'
+            );
+
+            updateRoleRequestsBadgeCount();
+            await renderAdminRoleRequests();
+        }
+
         // ========================================================
         // 5. PROFILE PICTURE UPLOAD HANDLER (MAX 1MB)
         // ========================================================
