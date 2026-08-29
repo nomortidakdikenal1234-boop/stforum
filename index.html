@@ -764,19 +764,18 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori</label>
                         <select id="staff-input-category" required class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090] bg-white">
-                            <option value="Administrator">Administrator / Exec</option>
                             <option value="Staff">Staff Team</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan / Role</label>
-                        <input type="text" id="staff-input-role" required placeholder="Contoh: Founder / Administrator" 
+                        <input type="text" id="staff-input-role" required placeholder="Contoh: Staff Official" 
                                class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Tugas / Sub-Jabatan</label>
-                    <input type="text" id="staff-input-desc" placeholder="Contoh: Chief Executive & System Controller" 
+                    <input type="text" id="staff-input-desc" placeholder="Contoh: System Controller & Moderator" 
                            class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
                 </div>
                 <div>
@@ -1005,14 +1004,14 @@
                 profile = {
                     id: userId,
                     username: username,
-                    role: (username.toLowerCase() === 'frederick jhonatan') ? 'Administrator' : 'Member',
+                    role: (username.toLowerCase() === 'frederick jhonatan') ? 'Staff' : 'Member',
                     avatar_url: 'https://placehold.co/100/000090/ffffff?text=ST'
                 };
             }
 
-            // Enforce Frederick Jhonatan as Administrator
+            // Enforce Frederick Jhonatan as Staff
             if (profile && profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
-                profile.role = 'Administrator';
+                profile.role = 'Staff';
             }
 
             currentUserProfile = profile;
@@ -1045,9 +1044,9 @@
                     profile.role = userApprovedReq.requested_role;
                 }
 
-                // Enforce Frederick Jhonatan as Administrator
+                // Enforce Frederick Jhonatan as Staff
                 if (profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
-                    profile.role = 'Administrator';
+                    profile.role = 'Staff';
                 }
 
                 if (nameElem) nameElem.innerText = profile.username || 'User';
@@ -1055,9 +1054,7 @@
                 
                 if (roleBadge) {
                     roleBadge.innerText = profile.role || 'Member';
-                    if (profile.role === 'Administrator') {
-                        roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 border border-amber-300';
-                    } else if (profile.role === 'Staff') {
+                    if (profile.role === 'Staff') {
                         roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white border border-blue-400';
                     } else if (profile.role === 'Customer') {
                         roleBadge.className = 'hidden sm:inline-block px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white border border-emerald-400';
@@ -1066,7 +1063,7 @@
                     }
                 }
 
-                const isAdminOrStaff = (profile.role === 'Administrator' || profile.role === 'Staff');
+                const isAdminOrStaff = (profile.role === 'Staff');
                 if (adminCreateBtn) {
                     if (isAdminOrStaff) adminCreateBtn.classList.remove('hidden');
                     else adminCreateBtn.classList.add('hidden');
@@ -1303,8 +1300,8 @@
         }
 
         async function openAdminRoleRequestsModal() {
-            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Akses Ditolak: Fitur ini khusus Staff.', 'error');
                 return;
             }
 
@@ -1323,15 +1320,12 @@
             let requestsList = [...localRoleRequests];
 
             if (supabaseClient) {
-                // Try select with joined profiles
                 let { data, error } = await supabaseClient
                     .from('role_requests')
                     .select('*, profiles(avatar_url)')
                     .order('created_at', { ascending: false });
 
-                // Fallback to simple select if join fails
                 if (error) {
-                    console.warn("Join query failed, trying plain select:", error);
                     const fallback = await supabaseClient
                         .from('role_requests')
                         .select('*')
@@ -1341,12 +1335,9 @@
                 }
 
                 if (data && data.length > 0) {
-                    // Merge local offline requests with Supabase items
                     const supabaseIds = new Set(data.map(d => d.id));
                     const unsyncedLocal = localRoleRequests.filter(l => !supabaseIds.has(l.id));
                     requestsList = [...unsyncedLocal, ...data];
-                } else if (error) {
-                    console.error("Fetching role_requests error:", error);
                 }
             }
 
@@ -1419,48 +1410,13 @@
         async function processRoleRequest(reqId, userId, targetUsername, requestedRole, action) {
             const newStatus = action === 'approved' ? 'approved' : 'denied';
 
-            const localIndex = localRoleRequests.findIndex(r => r.id === reqId || r.user_id === userId);
-            if (localIndex !== -1) {
-                localRoleRequests[localIndex].status = newStatus;
-                try {
-                    localStorage.setItem('sky_role_requests', JSON.stringify(localRoleRequests));
-                } catch (e) {}
-            }
-
-            if (supabaseClient) {
-                if (action === 'approved') {
-                    await supabaseClient
-                        .from('profiles')
-                        .update({ role: requestedRole })
-                        .eq('id', userId);
-                }
-
-                await supabaseClient
-                    .from('role_requests')
-                    .update({ status: newStatus })
-                    .eq('id', reqId);
-            }
-
-            if (currentUserProfile && currentUserProfile.id === userId && action === 'approved') {
-                currentUserProfile.role = requestedRole;
-                updateUserUI(currentUserProfile);
-            }
-
-            showToast(action === 'approved' 
-                ? `Role ${requestedRole} untuk ${targetUsername} berhasil disetujui!` 
-                : `Pengajuan role ${targetUsername} telah ditolak.`, 
-                action === 'approved' ? 'success' : 'info'
+            // 1. Update status di local storage
+            const localIndex = localRoleRequests.findIndex(r => 
+                r.id === reqId || 
+                (userId && r.user_id === userId) || 
+                (targetUsername && r.username && r.username.toLowerCase() === targetUsername.toLowerCase())
             );
 
-            updateRoleRequestsBadgeCount();
-            await renderAdminRoleRequests();
-        }
-
-        async function processRoleRequest(reqId, userId, targetUsername, requestedRole, action) {
-            const newStatus = action === 'approved' ? 'approved' : 'denied';
-
-            // 1. Update status di local storage
-            const localIndex = localRoleRequests.findIndex(r => r.id === reqId || (userId && r.user_id === userId) || (targetUsername && r.username === targetUsername));
             if (localIndex !== -1) {
                 localRoleRequests[localIndex].status = newStatus;
                 try {
@@ -1477,7 +1433,7 @@
                         .update({ role: requestedRole })
                         .eq('id', userId);
 
-                    // Fallback: Jika ID tidak cocok/kosong, coba update berdasarkan username
+                    // Fallback: Jika ID tidak cocok/kosong, update berdasarkan username
                     if (profErr || !userId) {
                         const { error: profErr2 } = await supabaseClient
                             .from('profiles')
@@ -1501,12 +1457,12 @@
             }
 
             // 3. Jika user yang disetujui adalah akun yang sedang login saat ini
-            if (currentUserProfile && (currentUserProfile.id === userId || currentUserProfile.username === targetUsername) && action === 'approved') {
+            if (currentUserProfile && (currentUserProfile.id === userId || (currentUserProfile.username && currentUserProfile.username.toLowerCase() === targetUsername.toLowerCase())) && action === 'approved') {
                 currentUserProfile.role = requestedRole;
                 updateUserUI(currentUserProfile);
             }
 
-            // 4. Refresh pesan chatbox agar warna & status role langsung berubah
+            // 4. Refresh pesan chatbox
             await loadChatboxMessages();
 
             showToast(action === 'approved' 
@@ -1816,7 +1772,7 @@
             // 2. Check staff list
             const staffMatch = staffMembersList.find(s => s.name && s.name.toLowerCase() === (msg.username || '').toLowerCase());
             if (staffMatch) {
-                userRole = staffMatch.category === 'Administrator' ? 'Administrator' : 'Staff';
+                userRole = 'Staff';
             }
 
             // 3. Check current logged in user
@@ -1828,7 +1784,7 @@
             }
 
             let roleColorClass = "text-slate-900 font-bold";
-            let roleSuffix = " (Pendatang)";
+            let roleSuffix = " (Member)";
 
             if (userRole === 'Customer') {
                 roleColorClass = "text-emerald-600 font-bold";
@@ -1836,15 +1792,9 @@
             } else if (userRole === 'Staff') {
                 roleColorClass = "text-[#000090] font-bold";
                 roleSuffix = " (Staff)";
-            } else if (userRole === 'Administrator') {
-                roleColorClass = "text-amber-600 font-bold";
-                roleSuffix = " (Administrator)";
-            } else if (userRole === 'Moderator') {
-                roleColorClass = "text-blue-600 font-bold";
-                roleSuffix = " (Moderator)";
             } else {
                 roleColorClass = "text-slate-900 font-bold";
-                roleSuffix = " (Pendatang)";
+                roleSuffix = " (Member)";
             }
 
             const formattedMessage = formatMentionText(msg.message);
@@ -1871,55 +1821,10 @@
             container.appendChild(msgElement);
         }
 
-        // ========================================================
-        // 7. ANNOUNCEMENTS LOGIC (ADMIN & STAFF ONLY POSTING)
-        // ========================================================
-        async function loadAnnouncements() {
-            const container = document.getElementById('announcements-list-detailed');
-            if (!container) return;
-
-            if (!supabaseClient) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-slate-500 text-xs">
-                        <i class="fa-solid fa-bullhorn text-2xl text-slate-300 mb-2"></i>
-                        <p>Belum ada pengumuman resmi saat ini.</p>
-                    </div>`;
-                return;
-            }
-
-            const { data, error } = await supabaseClient
-                .from('announcements')
-                .select('*')
-                .eq('is_active', true)
-                .order('created_at', { ascending: false });
-
-            if (data && data.length > 0) {
-                container.innerHTML = '';
-                data.forEach(ann => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-blue-50/60 border border-blue-100 border-l-4 border-l-[#000090] p-4 rounded-r-lg shadow-sm space-y-2';
-                    card.innerHTML = `
-                        <div class="flex items-center justify-between">
-                            <h3 class="font-bold text-sm text-[#000090] font-display">${escapeHtml(ann.title)}</h3>
-                            <span class="text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-semibold">${new Date(ann.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line">${escapeHtml(ann.content)}</p>
-                    `;
-                    container.appendChild(card);
-                });
-            } else {
-                container.innerHTML = `
-                    <div class="text-center py-10 text-slate-400 text-xs">
-                        <i class="fa-solid fa-bullhorn text-3xl mb-2 text-slate-300"></i>
-                        <p>Belum ada pengumuman resmi yang dipublikasikan.</p>
-                    </div>`;
-            }
-        }
-
         async function handleCreateAnnouncement(e) {
             e.preventDefault();
-            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Akses Ditolak: Hanya Administrator dan Staff yang dapat mempublikasikan pengumuman.', 'error');
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Akses Ditolak: Hanya Staff yang dapat mempublikasikan pengumuman.', 'error');
                 return;
             }
 
@@ -2100,107 +2005,63 @@
             const container = document.getElementById('staff-directory-content');
             if (!container) return;
 
-            const admins = staffMembersList.filter(s => s.category === 'Administrator');
-            const staffs = staffMembersList.filter(s => s.category !== 'Administrator');
-
-            const isAdmin = currentUserProfile && (currentUserProfile.role === 'Administrator' || currentUserProfile.role === 'Staff');
+            const isStaff = currentUserProfile && currentUserProfile.role === 'Staff';
 
             if (staffMembersList.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-12 text-slate-400 text-xs space-y-2">
                         <i class="fa-solid fa-users-gear text-3xl mb-1 text-slate-300"></i>
                         <p>Daftar staff belum diisi.</p>
-                        ${isAdmin ? `<p class="text-[11px] text-blue-600 font-semibold">Gunakan tombol "Tambah / Kelola Staff" di atas untuk menambahkan anggota staff secara manual.</p>` : ''}
+                        ${isStaff ? `<p class="text-[11px] text-blue-600 font-semibold">Gunakan tombol "Tambah / Kelola Staff" di atas untuk menambahkan anggota staff secara manual.</p>` : ''}
                     </div>
                 `;
                 return;
             }
 
-            let html = '';
-
-            if (admins.length > 0) {
-                html += `
+            let html = `
                 <div class="space-y-3">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-crown text-amber-500"></i> Executive & Administrator
+                        <i class="fa-solid fa-user-shield text-blue-600"></i> Official SkyTechnology Staff Team
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                `;
+            `;
 
-                admins.forEach(s => {
-                    html += `
-                        <div class="p-3.5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl flex items-center justify-between gap-3 shadow-sm relative group">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-12 h-12 rounded-full border-2 border-amber-400 overflow-hidden flex-shrink-0 shadow">
-                                    <img src="${escapeHtml(s.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST')}" alt="${escapeHtml(s.name)}" class="w-full h-full object-cover">
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5 truncate">
-                                        <span class="truncate">${escapeHtml(s.name)}</span>
-                                        ${s.verified ? '<i class="fa-solid fa-circle-check text-blue-600 text-xs" title="Verified Staff"></i>' : ''}
-                                    </div>
-                                    <span class="inline-block px-2 py-0.5 mt-0.5 text-[10px] font-extrabold bg-amber-500 text-slate-950 rounded">${escapeHtml(s.role_title)}</span>
-                                    <p class="text-[10px] text-slate-500 mt-1 truncate">${escapeHtml(s.description)}</p>
-                                </div>
-                            </div>
-                            ${isAdmin ? `
-                                <button onclick="deleteStaffMember('${s.id}')" title="Hapus Staff" class="text-red-400 hover:text-red-600 text-xs p-1 cursor-pointer transition opacity-70 hover:opacity-100">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-                });
-
+            staffMembersList.forEach(s => {
                 html += `
+                    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-sm relative group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 rounded-full border border-blue-400 overflow-hidden flex-shrink-0 shadow-sm">
+                                <img src="${escapeHtml(s.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST')}" alt="${escapeHtml(s.name)}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-bold text-xs text-slate-900 flex items-center gap-1 truncate">
+                                    <span class="truncate">${escapeHtml(s.name)}</span>
+                                    ${s.verified ? '<i class="fa-solid fa-circle-check text-blue-600 text-[10px]" title="Verified Staff"></i>' : ''}
+                                </div>
+                                <span class="inline-block px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded mt-0.5">${escapeHtml(s.role_title)}</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5 truncate">${escapeHtml(s.description)}</span>
+                            </div>
+                        </div>
+                        ${isStaff ? `
+                            <button onclick="deleteStaffMember('${s.id}')" title="Hapus Staff" class="text-red-400 hover:text-red-600 text-xs p-1 cursor-pointer transition opacity-70 hover:opacity-100">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            html += `
                     </div>
                 </div>
-                `;
-            }
-
-            if (staffs.length > 0) {
-                html += `
-                <div class="space-y-3 pt-2">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-user-shield text-blue-600"></i> Active Staff Team
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                `;
-
-                staffs.forEach(s => {
-                    html += `
-                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 relative group">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-full border border-blue-400 overflow-hidden flex-shrink-0">
-                                    <img src="${escapeHtml(s.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST')}" alt="${escapeHtml(s.name)}" class="w-full h-full object-cover">
-                                </div>
-                                <div class="min-w-0">
-                                    <span class="font-bold text-xs text-slate-800 block truncate">${escapeHtml(s.name)}</span>
-                                    <span class="inline-block px-2 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded mt-0.5">${escapeHtml(s.role_title)}</span>
-                                    <span class="text-[10px] text-slate-400 block mt-0.5 truncate">${escapeHtml(s.description)}</span>
-                                </div>
-                            </div>
-                            ${isAdmin ? `
-                                <button onclick="deleteStaffMember('${s.id}')" title="Hapus Staff" class="text-red-400 hover:text-red-600 text-xs p-1 cursor-pointer transition opacity-70 hover:opacity-100">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-                });
-
-                html += `
-                    </div>
-                </div>
-                `;
-            }
+            `;
 
             container.innerHTML = html;
         }
 
         function openManageStaffModal() {
-            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Akses Ditolak: Fitur ini khusus Staff.', 'error');
                 return;
             }
             document.getElementById('manage-staff-modal').classList.remove('hidden');
@@ -2306,8 +2167,8 @@
         }
 
         function openEditRecruitmentModal() {
-            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Akses Ditolak: Fitur ini khusus Staff.', 'error');
                 return;
             }
 
@@ -2445,8 +2306,8 @@
         }
 
         function openManagePartnershipModal() {
-            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Akses Ditolak: Fitur ini khusus Staff.', 'error');
                 return;
             }
             document.getElementById('manage-partnership-modal').classList.remove('hidden');
@@ -2605,8 +2466,8 @@
             document.getElementById('register-modal').classList.add('hidden');
         }
         function openCreateAnnouncementModal() {
-            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Hanya Administrator dan Staff yang dapat membuat pengumuman.', 'error');
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Hanya Staff yang dapat membuat pengumuman.', 'error');
                 return;
             }
             document.getElementById('announcement-modal').classList.remove('hidden');
