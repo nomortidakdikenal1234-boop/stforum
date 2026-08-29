@@ -273,10 +273,15 @@
                         </div>
                     </div>
 
-                    <!-- Chatbox Input -->
-                    <div class="p-2 bg-white border-t border-slate-200 flex gap-2">
-                        <input type="text" id="chat-input" placeholder="Tulis pesan kamu di sini... (Login untuk mengirim)" 
-                               onkeypress="if(event.key === 'Enter') sendChatMessage()"
+                    <!-- Chatbox Input with Mention Overlay -->
+                    <div class="p-2 bg-white border-t border-slate-200 flex gap-2 relative">
+                        <!-- Mention Auto-complete Dropdown Popup -->
+                        <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-2 right-2 mb-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-40 overflow-y-auto custom-scrollbar z-50 text-xs"></div>
+
+                        <input type="text" id="chat-input" placeholder="Tulis pesan... (@ untuk mention username)" 
+                               oninput="handleChatInputMention(this)"
+                               onkeydown="handleChatInputKeyDown(event)"
+                               onkeypress="if(event.key === 'Enter' && !isMentionDropdownActive) sendChatMessage()"
                                class="flex-1 bg-slate-100 border border-slate-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#000090]">
                         <button onclick="sendChatMessage()" class="px-4 py-1.5 bg-[#000090] hover:bg-[#000070] text-white rounded font-semibold text-xs transition cursor-pointer">
                             Kirim
@@ -1521,7 +1526,7 @@
 
             const { data, error } = await supabaseClient
                 .from('chatbox_messages')
-                .select('*, profiles(avatar_url)')
+                .select('*, profiles(avatar_url, role)')
                 .order('created_at', { ascending: true })
                 .limit(50);
 
@@ -1606,11 +1611,113 @@
                 appendChatMessageDOM({
                     username: currentUserProfile.username,
                     avatar_url: currentUserProfile.avatar_url,
+                    role: currentUserProfile.role,
                     message: message,
                     created_at: new Date().toISOString()
                 });
             }
             input.value = '';
+            hideMentionDropdown();
+        }
+
+        // MENTION SYSTEM HELPERS
+        let isMentionDropdownActive = false;
+        let selectedMentionUsersList = [];
+
+        function getAllKnownUsernames() {
+            const usersSet = new Set();
+            if (currentUserProfile && currentUserProfile.username) usersSet.add(currentUserProfile.username);
+            staffMembersList.forEach(s => { if (s.name) usersSet.add(s.name); });
+            
+            document.querySelectorAll('.chat-username-tag').forEach(el => {
+                const uname = el.getAttribute('data-username');
+                if (uname) usersSet.add(uname);
+            });
+            return Array.from(usersSet);
+        }
+
+        function insertMention(username) {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            const currentVal = input.value;
+            if (!currentVal.includes(`@${username}`)) {
+                input.value = currentVal ? `${currentVal.trim()} @${username} ` : `@${username} `;
+            }
+            input.focus();
+            hideMentionDropdown();
+        }
+
+        function handleChatInputMention(input) {
+            const val = input.value;
+            const cursorPos = input.selectionStart;
+            const textBeforeCursor = val.slice(0, cursorPos);
+            const atMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\s]*)$/);
+
+            if (atMatch) {
+                const query = atMatch[1].toLowerCase();
+                const allUsers = getAllKnownUsernames();
+                const matches = allUsers.filter(u => u.toLowerCase().includes(query));
+
+                if (matches.length > 0) {
+                    renderMentionDropdown(matches);
+                    return;
+                }
+            }
+            hideMentionDropdown();
+        }
+
+        function handleChatInputKeyDown(e) {
+            if (isMentionDropdownActive && (e.key === 'Escape' || e.key === 'Tab')) {
+                hideMentionDropdown();
+            }
+        }
+
+        function renderMentionDropdown(users) {
+            const dropdown = document.getElementById('chat-mention-dropdown');
+            if (!dropdown) return;
+
+            dropdown.innerHTML = users.map(u => `
+                <div onclick="selectMentionUser('${escapeHtml(u)}')" 
+                     class="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between border-b border-slate-100 last:border-0 transition">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-at text-[#000090] text-xs"></i>
+                        <span class="text-slate-800 text-xs font-semibold">${escapeHtml(u)}</span>
+                    </div>
+                    <span class="text-[10px] text-blue-700 font-bold bg-blue-100 px-1.5 py-0.5 rounded">Mention</span>
+                </div>
+            `).join('');
+
+            dropdown.classList.remove('hidden');
+            isMentionDropdownActive = true;
+        }
+
+        function selectMentionUser(username) {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            
+            const cursorPos = input.selectionStart;
+            const textBefore = input.value.slice(0, cursorPos);
+            const textAfter = input.value.slice(cursorPos);
+            
+            const newTextBefore = textBefore.replace(/@([a-zA-Z0-9_\s]*)$/, `@${username} `);
+            input.value = newTextBefore + textAfter;
+            
+            hideMentionDropdown();
+            input.focus();
+        }
+
+        function hideMentionDropdown() {
+            const dropdown = document.getElementById('chat-mention-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            isMentionDropdownActive = false;
+        }
+
+        function formatMentionText(text) {
+            if (!text) return '';
+            const escaped = escapeHtml(text);
+            return escaped.replace(/@([a-zA-Z0-9_\s]{2,25})(?=\s|$|[.,!?])/g, (match, p1) => {
+                return `<span class="bg-blue-100 text-[#000090] font-bold px-1.5 py-0.5 rounded text-[11px] inline-flex items-center gap-0.5"><i class="fa-solid fa-at text-[9px]"></i>${p1}</span>`;
+            });
         }
 
         function appendChatMessageDOM(msg) {
@@ -1623,6 +1730,27 @@
                 || (currentUserProfile && msg.user_id === currentUserProfile.id ? currentUserProfile.avatar_url : null) 
                 || 'https://placehold.co/100/000090/ffffff?text=ST';
 
+            let userRole = msg.role || (msg.profiles && msg.profiles.role);
+            if (currentUserProfile && (msg.user_id === currentUserProfile.id || msg.username === currentUserProfile.username)) {
+                userRole = currentUserProfile.role;
+            }
+
+            let roleColorClass = "text-slate-900 font-bold";
+            let roleSuffix = " (Pendatang)";
+
+            if (userRole === 'Customer') {
+                roleColorClass = "text-emerald-600 font-bold";
+                roleSuffix = " (Customer)";
+            } else if (userRole === 'Staff' || userRole === 'Administrator' || userRole === 'Moderator') {
+                roleColorClass = "text-[#000090] font-bold";
+                roleSuffix = " (Staff)";
+            } else {
+                roleColorClass = "text-slate-900 font-bold";
+                roleSuffix = " (Pendatang)";
+            }
+
+            const formattedMessage = formatMentionText(msg.message);
+
             const msgElement = document.createElement('div');
             msgElement.className = 'flex items-start gap-2.5 text-xs py-1.5 border-b border-slate-100';
             msgElement.innerHTML = `
@@ -1631,10 +1759,15 @@
                      onerror="this.onerror=null; this.src='https://placehold.co/100/000090/ffffff?text=ST';">
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                        <span class="font-bold text-[#000090] text-xs truncate">${escapeHtml(msg.username)}</span>
+                        <button onclick="insertMention('${escapeHtml(msg.username)}')" 
+                                class="chat-username-tag ${roleColorClass} text-xs truncate hover:underline cursor-pointer text-left" 
+                                data-username="${escapeHtml(msg.username)}" 
+                                title="Klik untuk mention user ini">
+                            ${escapeHtml(msg.username)}${roleSuffix}
+                        </button>
                         <span class="text-[10px] text-slate-400 font-mono ml-2">${timeStr}</span>
                     </div>
-                    <p class="text-slate-700 text-xs break-words leading-snug mt-0.5">${escapeHtml(msg.message)}</p>
+                    <p class="text-slate-700 text-xs break-words leading-snug mt-0.5">${formattedMessage}</p>
                 </div>
             `;
             container.appendChild(msgElement);
