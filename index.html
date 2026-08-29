@@ -1036,6 +1036,15 @@
                 const avatarElem = document.getElementById('user-avatar');
                 const roleBadge = document.getElementById('user-role-badge');
 
+                // Check local approved role requests for the logged in user
+                const userApprovedReq = localRoleRequests.find(r => 
+                    (r.username && r.username.toLowerCase() === (profile.username || '').toLowerCase()) && 
+                    r.status === 'approved'
+                );
+                if (userApprovedReq) {
+                    profile.role = userApprovedReq.requested_role;
+                }
+
                 // Enforce Frederick Jhonatan as Administrator
                 if (profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
                     profile.role = 'Administrator';
@@ -1786,7 +1795,7 @@
         function appendChatMessageDOM(msg) {
             const container = document.getElementById('chatbox-messages');
             if (!container) return;
-            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const avatar = msg.avatar_url 
                 || (msg.profiles && msg.profiles.avatar_url) 
@@ -1794,7 +1803,27 @@
                 || 'https://placehold.co/100/000090/ffffff?text=ST';
 
             let userRole = msg.role || (msg.profiles && msg.profiles.role);
-            if (currentUserProfile && (msg.user_id === currentUserProfile.id || msg.username === currentUserProfile.username)) {
+
+            // 1. Check local approved role requests for this username
+            const approvedReq = localRoleRequests.find(r => 
+                (r.username && r.username.toLowerCase() === (msg.username || '').toLowerCase()) && 
+                r.status === 'approved'
+            );
+            if (approvedReq) {
+                userRole = approvedReq.requested_role;
+            }
+
+            // 2. Check staff list
+            const staffMatch = staffMembersList.find(s => s.name && s.name.toLowerCase() === (msg.username || '').toLowerCase());
+            if (staffMatch) {
+                userRole = staffMatch.category === 'Administrator' ? 'Administrator' : 'Staff';
+            }
+
+            // 3. Check current logged in user
+            if (currentUserProfile && (
+                (currentUserProfile.id && msg.user_id === currentUserProfile.id) || 
+                (currentUserProfile.username && currentUserProfile.username.toLowerCase() === (msg.username || '').toLowerCase())
+            )) {
                 userRole = currentUserProfile.role;
             }
 
@@ -1804,9 +1833,15 @@
             if (userRole === 'Customer') {
                 roleColorClass = "text-emerald-600 font-bold";
                 roleSuffix = " (Customer)";
-            } else if (userRole === 'Staff' || userRole === 'Administrator' || userRole === 'Moderator') {
+            } else if (userRole === 'Staff') {
                 roleColorClass = "text-[#000090] font-bold";
                 roleSuffix = " (Staff)";
+            } else if (userRole === 'Administrator') {
+                roleColorClass = "text-amber-600 font-bold";
+                roleSuffix = " (Administrator)";
+            } else if (userRole === 'Moderator') {
+                roleColorClass = "text-blue-600 font-bold";
+                roleSuffix = " (Moderator)";
             } else {
                 roleColorClass = "text-slate-900 font-bold";
                 roleSuffix = " (Pendatang)";
