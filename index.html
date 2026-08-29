@@ -263,29 +263,22 @@
                         <!-- Mention Auto-complete Dropdown Popup (Fixed positioning to prevent clipping) -->
                         <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar z-50 text-xs"></div>
 
-                        <!-- Emoji Picker Dropdown Popup -->
-                        <div id="emoji-picker-dropdown" class="hidden absolute bottom-full right-2 mb-2 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 w-64">
-                            <div class="text-[11px] font-bold text-slate-500 mb-2 flex items-center justify-between border-b border-slate-100 pb-1">
-                                <span>Pilih Emoji</span>
+                        <!-- Expanded Emoji Picker Dropdown Popup with Categories -->
+                        <div id="emoji-picker-dropdown" class="hidden absolute bottom-full right-2 mb-2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 z-50 w-72 sm:w-80">
+                            <div class="text-[11px] font-bold text-slate-600 mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                                <span class="flex items-center gap-1.5"><i class="fa-regular fa-face-smile text-blue-600"></i> Pilih Emoji</span>
                                 <button type="button" onclick="toggleEmojiPicker()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
                             </div>
-                            <div class="grid grid-cols-6 gap-1.5 text-lg text-center">
-                                <button type="button" onclick="insertEmoji('👍')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">👍</button>
-                                <button type="button" onclick="insertEmoji('❤️')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">❤️</button>
-                                <button type="button" onclick="insertEmoji('😂')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😂</button>
-                                <button type="button" onclick="insertEmoji('🔥')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🔥</button>
-                                <button type="button" onclick="insertEmoji('🎉')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🎉</button>
-                                <button type="button" onclick="insertEmoji('🚀')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🚀</button>
-                                <button type="button" onclick="insertEmoji('😍')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😍</button>
-                                <button type="button" onclick="insertEmoji('😮')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😮</button>
-                                <button type="button" onclick="insertEmoji('😢')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😢</button>
-                                <button type="button" onclick="insertEmoji('🙏')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🙏</button>
-                                <button type="button" onclick="insertEmoji('💯')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">💯</button>
-                                <button type="button" onclick="insertEmoji('✨')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">✨</button>
-                                <button type="button" onclick="insertEmoji('👏')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">👏</button>
-                                <button type="button" onclick="insertEmoji('😎')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😎</button>
-                                <button type="button" onclick="insertEmoji('💩')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">💩</button>
-                                <button type="button" onclick="insertEmoji('🤝')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🤝</button>
+                            <!-- Category Tabs -->
+                            <div class="flex items-center gap-1 border-b border-slate-100 pb-1.5 mb-2 text-xs overflow-x-auto custom-scrollbar">
+                                <button type="button" onclick="switchEmojiTab('popular')" id="emoji-tab-popular" class="px-2.5 py-1 rounded-full bg-blue-100 text-[#000090] font-bold whitespace-nowrap transition text-[11px]">🔥 Populer</button>
+                                <button type="button" onclick="switchEmojiTab('smileys')" id="emoji-tab-smileys" class="px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]">😀 Wajah</button>
+                                <button type="button" onclick="switchEmojiTab('gestures')" id="emoji-tab-gestures" class="px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]">👍 Tangan</button>
+                                <button type="button" onclick="switchEmojiTab('objects')" id="emoji-tab-objects" class="px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]">🚀 Simbol</button>
+                            </div>
+                            <!-- Emoji Grid -->
+                            <div id="emoji-grid-container" class="grid grid-cols-7 gap-1 text-lg text-center max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                <!-- Dynamic Emojis Rendered Here -->
                             </div>
                         </div>
 
@@ -893,6 +886,7 @@
             renderStaffList();
             renderRecruitmentInfo();
             renderPartnershipsList();
+            switchEmojiTab('popular');
 
             if (window.supabase) {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1213,9 +1207,22 @@
                 return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 font-semibold underline inline-flex items-center gap-0.5 break-all">${match} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></a>`;
             });
 
-            // 2. Format @mentions accurately without truncation or cutting off
-            const mentionPattern = /@([a-zA-Z0-9_-]+)/g;
-            safeText = safeText.replace(mentionPattern, function(match, uname) {
+            // 2. Format @mentions accurately, including full names with spaces
+            const knownUsers = getAllKnownUsernames().sort((a, b) => b.length - a.length);
+
+            knownUsers.forEach(uname => {
+                if (!uname) return;
+                const escaped = uname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`@${escaped}(?=[\\s,.:;!?!]|$|<)`, 'gi');
+                safeText = safeText.replace(regex, function() {
+                    return `<span class="bg-blue-100 text-[#000090] px-1.5 py-0.5 rounded font-semibold text-[11px] inline-block break-all">@${escapeHtml(uname)}</span>`;
+                });
+            });
+
+            // Fallback for single-word @mentions not in known list
+            const fallbackMentionPattern = /@([a-zA-Z0-9_-]+)/g;
+            safeText = safeText.replace(fallbackMentionPattern, function(match, uname) {
+                if (safeText.includes(`@${uname}</span>`)) return match;
                 return `<span class="bg-blue-100 text-[#000090] px-1.5 py-0.5 rounded font-semibold text-[11px] inline-block break-all">@${uname}</span>`;
             });
 
@@ -1313,6 +1320,34 @@
         }
 
         // EMOJI PICKER & REACTION HANDLERS
+        const EMOJI_DICTIONARY = {
+            popular: ['👍', '❤️', '😂', '🔥', '🎉', '🚀', '😍', '😮', '😢', '🙏', '💯', '✨', '👏', '😎', '💩', '🤝', '💡', '🥳', '🎯', '✅', '❌'],
+            smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐'],
+            gestures: ['👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘', '👌', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐', '🖖', '👋', '🤙', '💪', '🖕', '✍️', '🙏', '🤝', '👏'],
+            objects: ['🔥', '💥', '✨', '🌟', '💫', '🎉', '🎊', '🚀', '💻', '📱', '🖥️', '⚙️', '🔧', '🛡️', '🔒', '🔑', '💡', '📢', '🔔', '🎯', '🏆', '🥇', '👑', '💎', '📊', '📝', '📌', '✅', '❌', '❓', '❗', '⚠️', '💬', '💭', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖']
+        };
+
+        function switchEmojiTab(category) {
+            const container = document.getElementById('emoji-grid-container');
+            if (!container) return;
+
+            ['popular', 'smileys', 'gestures', 'objects'].forEach(cat => {
+                const btn = document.getElementById(`emoji-tab-${cat}`);
+                if (btn) {
+                    if (cat === category) {
+                        btn.className = 'px-2.5 py-1 rounded-full bg-blue-100 text-[#000090] font-bold whitespace-nowrap transition text-[11px]';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]';
+                    }
+                }
+            });
+
+            const emojis = EMOJI_DICTIONARY[category] || EMOJI_DICTIONARY.popular;
+            container.innerHTML = emojis.map(emoji => `
+                <button type="button" onclick="insertEmoji('${emoji}')" class="p-1 hover:bg-slate-100 hover:scale-125 rounded transition cursor-pointer text-lg">${emoji}</button>
+            `).join('');
+        }
+
         function toggleEmojiPicker() {
             const dropdown = document.getElementById('emoji-picker-dropdown');
             if (dropdown) dropdown.classList.toggle('hidden');
@@ -1481,7 +1516,7 @@
             const val = input.value;
             const cursorPos = input.selectionStart;
             const textBeforeCursor = val.slice(0, cursorPos);
-            const atMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+            const atMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\s-]*)$/);
 
             if (atMatch) {
                 const query = atMatch[1].toLowerCase().trim();
