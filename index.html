@@ -273,16 +273,48 @@
                         </div>
                     </div>
 
-                    <!-- Chatbox Input with Mention Overlay -->
-                    <div class="p-2 bg-white border-t border-slate-200 flex gap-2 relative">
+                    <!-- Chatbox Input with Mention & Emoji Overlay -->
+                    <div class="p-2 bg-white border-t border-slate-200 flex items-center gap-2 relative">
                         <!-- Mention Auto-complete Dropdown Popup -->
                         <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-2 right-2 mb-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-40 overflow-y-auto custom-scrollbar z-50 text-xs"></div>
+
+                        <!-- Emoji Picker Dropdown Popup -->
+                        <div id="emoji-picker-dropdown" class="hidden absolute bottom-full right-2 mb-2 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 w-64">
+                            <div class="text-[11px] font-bold text-slate-500 mb-2 flex items-center justify-between border-b border-slate-100 pb-1">
+                                <span>Pilih Emoji</span>
+                                <button type="button" onclick="toggleEmojiPicker()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="grid grid-cols-6 gap-1.5 text-lg text-center">
+                                <button type="button" onclick="insertEmoji('👍')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">👍</button>
+                                <button type="button" onclick="insertEmoji('❤️')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">❤️</button>
+                                <button type="button" onclick="insertEmoji('😂')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😂</button>
+                                <button type="button" onclick="insertEmoji('🔥')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🔥</button>
+                                <button type="button" onclick="insertEmoji('🎉')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🎉</button>
+                                <button type="button" onclick="insertEmoji('🚀')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🚀</button>
+                                <button type="button" onclick="insertEmoji('😍')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😍</button>
+                                <button type="button" onclick="insertEmoji('😮')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😮</button>
+                                <button type="button" onclick="insertEmoji('😢')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😢</button>
+                                <button type="button" onclick="insertEmoji('🙏')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🙏</button>
+                                <button type="button" onclick="insertEmoji('💯')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">💯</button>
+                                <button type="button" onclick="insertEmoji('✨')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">✨</button>
+                                <button type="button" onclick="insertEmoji('👏')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">👏</button>
+                                <button type="button" onclick="insertEmoji('😎')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">😎</button>
+                                <button type="button" onclick="insertEmoji('💩')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">💩</button>
+                                <button type="button" onclick="insertEmoji('🤝')" class="p-1 hover:bg-slate-100 rounded transition cursor-pointer">🤝</button>
+                            </div>
+                        </div>
 
                         <input type="text" id="chat-input" placeholder="Tulis pesan... (@ untuk mention username)" 
                                oninput="handleChatInputMention(this)"
                                onkeydown="handleChatInputKeyDown(event)"
                                onkeypress="if(event.key === 'Enter' && !isMentionDropdownActive) sendChatMessage()"
                                class="flex-1 bg-slate-100 border border-slate-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#000090]">
+                        
+                        <!-- Emoji Toggle Button -->
+                        <button type="button" onclick="toggleEmojiPicker()" title="Tambah Emoji" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded transition cursor-pointer text-sm">
+                            <i class="fa-regular fa-face-smile"></i>
+                        </button>
+
                         <button onclick="sendChatMessage()" class="px-4 py-1.5 bg-[#000090] hover:bg-[#000070] text-white rounded font-semibold text-xs transition cursor-pointer">
                             Kirim
                         </button>
@@ -886,6 +918,7 @@
         let currentUserProfile = null;
         let uploadedAvatarBase64 = null;
         let localRoleRequests = [];
+        let chatMessageReactions = {};
 
         // DYNAMIC DATA STORES
         let staffMembersList = [];
@@ -921,6 +954,9 @@
 
                 const savedRec = localStorage.getItem('sky_recruitment_info');
                 if (savedRec) recruitmentInfoData = JSON.parse(savedRec);
+
+                const savedReactions = localStorage.getItem('sky_chat_reactions');
+                if (savedReactions) chatMessageReactions = JSON.parse(savedReactions);
             } catch (e) {}
 
             renderStaffList();
@@ -1688,96 +1724,90 @@
                 const matches = allUsers.filter(u => u.toLowerCase().includes(query));
 
                 if (matches.length > 0) {
-                    renderMentionDropdown(matches);
-                    return;
-                }
-            }
-            hideMentionDropdown();
+        // EMOJI PICKER & REACTION HANDLERS
+        function toggleEmojiPicker() {
+            const dropdown = document.getElementById('emoji-picker-dropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
         }
 
-        function handleChatInputKeyDown(e) {
-            if (isMentionDropdownActive && (e.key === 'Escape' || e.key === 'Tab')) {
-                hideMentionDropdown();
-            }
-        }
-
-        function renderMentionDropdown(users) {
-            const dropdown = document.getElementById('chat-mention-dropdown');
-            if (!dropdown) return;
-
-            dropdown.innerHTML = users.map(u => `
-                <div onclick="selectMentionUser('${escapeHtml(u)}')" 
-                     class="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center justify-between border-b border-slate-100 last:border-0 transition">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-at text-[#000090] text-xs"></i>
-                        <span class="text-slate-800 text-xs font-semibold">${escapeHtml(u)}</span>
-                    </div>
-                    <span class="text-[10px] text-blue-700 font-bold bg-blue-100 px-1.5 py-0.5 rounded">Mention</span>
-                </div>
-            `).join('');
-
-            dropdown.classList.remove('hidden');
-            isMentionDropdownActive = true;
-        }
-
-        function selectMentionUser(username) {
+        function insertEmoji(emoji) {
             const input = document.getElementById('chat-input');
             if (!input) return;
-            
-            const cursorPos = input.selectionStart;
-            const textBefore = input.value.slice(0, cursorPos);
-            const textAfter = input.value.slice(cursorPos);
-            
-            const newTextBefore = textBefore.replace(/@([a-zA-Z0-9_\s]*)$/, `@${username} `);
-            input.value = newTextBefore + textAfter;
-            
-            hideMentionDropdown();
+            input.value += emoji;
             input.focus();
+            toggleEmojiPicker();
         }
 
-        function hideMentionDropdown() {
-            const dropdown = document.getElementById('chat-mention-dropdown');
-            if (dropdown) dropdown.classList.add('hidden');
-            isMentionDropdownActive = false;
+        function toggleReactionPicker(msgId) {
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.toggle('hidden');
         }
 
-        function formatMentionText(text) {
-            if (!text) return '';
-            let escaped = escapeHtml(text);
-            
-            // Ambil daftar seluruh username yang dikenal dan urutkan berdasarkan karakter terpanjang
-            const knownUsers = getAllKnownUsernames()
-                .filter(u => u && u.trim().length > 0)
-                .sort((a, b) => b.length - a.length);
+        function toggleMessageReaction(msgId, emoji) {
+            if (!currentUserProfile) {
+                showToast('Silakan login terlebih dahulu untuk memberikan reaksi.', 'info');
+                openLoginModal();
+                return;
+            }
 
-            // 1. Prioritaskan pencocokan nama pengguna yang terdaftar/dikenal
-            knownUsers.forEach(uname => {
-                const escapedName = escapeHtml(uname);
-                const regex = new RegExp(`@${escapedName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(?=\\s|$|[.,!?])`, 'gi');
-                escaped = escaped.replace(regex, () => {
-                    return `__MENTION_MATCH__${escapedName}__END_MENTION__`;
-                });
-            });
+            if (!chatMessageReactions[msgId]) {
+                chatMessageReactions[msgId] = {};
+            }
+            if (!chatMessageReactions[msgId][emoji]) {
+                chatMessageReactions[msgId][emoji] = [];
+            }
 
-            // 2. Untuk mention umum tanpa spasi yang belum terdaftar (misal @username_satu_kata)
-            escaped = escaped.replace(/@([a-zA-Z0-9_]+)(?=\s|$|[.,!?])/g, (match, p1) => {
-                if (!escaped.includes(`__MENTION_MATCH__${p1}__END_MENTION__`)) {
-                    return `__MENTION_MATCH__${p1}__END_MENTION__`;
+            const username = currentUserProfile.username;
+            const userIndex = chatMessageReactions[msgId][emoji].indexOf(username);
+
+            if (userIndex > -1) {
+                chatMessageReactions[msgId][emoji].splice(userIndex, 1);
+                if (chatMessageReactions[msgId][emoji].length === 0) {
+                    delete chatMessageReactions[msgId][emoji];
                 }
-                return match;
-            });
+            } else {
+                chatMessageReactions[msgId][emoji].push(username);
+            }
 
-            // 3. Konversi marker menjadi badge HTML mention
-            escaped = escaped.replace(/__MENTION_MATCH__(.*?)__END_MENTION__/g, (match, p1) => {
-                return `<span class="bg-blue-100 text-[#000090] font-bold px-1.5 py-0.5 rounded text-[11px] inline-flex items-center gap-0.5"><i class="fa-solid fa-at text-[9px]"></i>${p1}</span>`;
-            });
+            try {
+                localStorage.setItem('sky_chat_reactions', JSON.stringify(chatMessageReactions));
+            } catch (e) {}
 
-            return escaped;
+            const reactionsElem = document.getElementById(`msg-reactions-${msgId}`);
+            if (reactionsElem) {
+                reactionsElem.innerHTML = renderMessageReactionsHTML(msgId);
+            }
+
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.add('hidden');
+        }
+
+        function renderMessageReactionsHTML(msgId) {
+            const reactions = chatMessageReactions[msgId];
+            if (!reactions) return '';
+
+            let html = '';
+            for (const [emoji, users] of Object.entries(reactions)) {
+                if (users.length > 0) {
+                    const isMyReaction = currentUserProfile && users.includes(currentUserProfile.username);
+                    const activeClass = isMyReaction ? 'bg-blue-100 border-blue-300 text-blue-900 font-bold' : 'bg-slate-100 border-slate-200 text-slate-700';
+                    html += `
+                        <button onclick="toggleMessageReaction('${msgId}', '${emoji}')" 
+                                title="${users.join(', ')}" 
+                                class="px-2 py-0.5 border rounded-full text-[11px] flex items-center gap-1 hover:bg-blue-50 transition cursor-pointer ${activeClass}">
+                            <span>${emoji}</span>
+                            <span class="text-[10px]">${users.length}</span>
+                        </button>
+                    `;
+                }
+            }
+            return html;
         }
 
         function appendChatMessageDOM(msg) {
             const container = document.getElementById('chatbox-messages');
             if (!container) return;
+            const msgId = msg.id || ('msg_' + (msg.created_at ? new Date(msg.created_at).getTime() : Date.now()) + '_' + Math.random().toString(36).substr(2, 4));
             const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const avatar = msg.avatar_url 
@@ -1811,7 +1841,7 @@
             }
 
             let roleColorClass = "text-slate-900 font-bold";
-            let roleSuffix = " (Member)";
+            let roleSuffix = " (Pendatang)";
 
             if (userRole === 'Customer') {
                 roleColorClass = "text-emerald-600 font-bold";
@@ -1821,13 +1851,14 @@
                 roleSuffix = " (Staff)";
             } else {
                 roleColorClass = "text-slate-900 font-bold";
-                roleSuffix = " (Member)";
+                roleSuffix = " (Pendatang)";
             }
 
             const formattedMessage = formatMentionText(msg.message);
 
             const msgElement = document.createElement('div');
-            msgElement.className = 'flex items-start gap-2.5 text-xs py-1.5 border-b border-slate-100';
+            msgElement.className = 'flex items-start gap-2.5 text-xs py-1.5 border-b border-slate-100 group relative';
+            msgElement.id = `chat-msg-item-${msgId}`;
             msgElement.innerHTML = `
                 <img src="${escapeHtml(avatar)}" alt="${escapeHtml(msg.username)}" 
                      class="w-7 h-7 rounded-full border border-blue-200 object-cover flex-shrink-0 mt-0.5 shadow-sm"
@@ -1840,9 +1871,28 @@
                                 title="Klik untuk mention user ini">
                             ${escapeHtml(msg.username)}${roleSuffix}
                         </button>
-                        <span class="text-[10px] text-slate-400 font-mono ml-2">${timeStr}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-400 font-mono">${timeStr}</span>
+                            <button onclick="toggleReactionPicker('${msgId}')" title="Beri reaksi emoji" class="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition text-[11px] p-0.5 cursor-pointer">
+                                <i class="fa-regular fa-face-smile"></i>
+                            </button>
+                        </div>
                     </div>
                     <p class="text-slate-700 text-xs break-words leading-snug mt-0.5">${formattedMessage}</p>
+
+                    <!-- Quick Emoji Reaction Picker Popup for Message -->
+                    <div id="reaction-picker-${msgId}" class="hidden mt-1.5 bg-white border border-slate-200 rounded-full shadow-md p-1 inline-flex items-center gap-1 z-10">
+                        <button onclick="toggleMessageReaction('${msgId}', '👍')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">👍</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '❤️')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">❤️</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '😂')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">😂</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '🔥')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">🔥</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '😮')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">😮</button>
+                    </div>
+
+                    <!-- Reactions List -->
+                    <div id="msg-reactions-${msgId}" class="flex flex-wrap items-center gap-1 mt-1">
+                        ${renderMessageReactionsHTML(msgId)}
+                    </div>
                 </div>
             `;
             container.appendChild(msgElement);
@@ -1982,6 +2032,12 @@
             const dropdown = document.getElementById('search-results-dropdown');
             if (searchContainer && !searchContainer.contains(e.target) && dropdown) {
                 dropdown.classList.add('hidden');
+            }
+
+            const emojiDropdown = document.getElementById('emoji-picker-dropdown');
+            const emojiBtn = e.target.closest('button[onclick="toggleEmojiPicker()"]');
+            if (emojiDropdown && !emojiDropdown.contains(e.target) && !emojiBtn) {
+                emojiDropdown.classList.add('hidden');
             }
         });
 
