@@ -1656,6 +1656,7 @@
             const usersSet = new Set();
             if (currentUserProfile && currentUserProfile.username) usersSet.add(currentUserProfile.username);
             staffMembersList.forEach(s => { if (s.name) usersSet.add(s.name); });
+            localRoleRequests.forEach(r => { if (r.username) usersSet.add(r.username); });
             
             document.querySelectorAll('.chat-username-tag').forEach(el => {
                 const uname = el.getAttribute('data-username');
@@ -1742,10 +1743,36 @@
 
         function formatMentionText(text) {
             if (!text) return '';
-            const escaped = escapeHtml(text);
-            return escaped.replace(/@([a-zA-Z0-9_\s]{2,25})(?=\s|$|[.,!?])/g, (match, p1) => {
+            let escaped = escapeHtml(text);
+            
+            // Ambil daftar seluruh username yang dikenal dan urutkan berdasarkan karakter terpanjang
+            const knownUsers = getAllKnownUsernames()
+                .filter(u => u && u.trim().length > 0)
+                .sort((a, b) => b.length - a.length);
+
+            // 1. Prioritaskan pencocokan nama pengguna yang terdaftar/dikenal
+            knownUsers.forEach(uname => {
+                const escapedName = escapeHtml(uname);
+                const regex = new RegExp(`@${escapedName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(?=\\s|$|[.,!?])`, 'gi');
+                escaped = escaped.replace(regex, () => {
+                    return `__MENTION_MATCH__${escapedName}__END_MENTION__`;
+                });
+            });
+
+            // 2. Untuk mention umum tanpa spasi yang belum terdaftar (misal @username_satu_kata)
+            escaped = escaped.replace(/@([a-zA-Z0-9_]+)(?=\s|$|[.,!?])/g, (match, p1) => {
+                if (!escaped.includes(`__MENTION_MATCH__${p1}__END_MENTION__`)) {
+                    return `__MENTION_MATCH__${p1}__END_MENTION__`;
+                }
+                return match;
+            });
+
+            // 3. Konversi marker menjadi badge HTML mention
+            escaped = escaped.replace(/__MENTION_MATCH__(.*?)__END_MENTION__/g, (match, p1) => {
                 return `<span class="bg-blue-100 text-[#000090] font-bold px-1.5 py-0.5 rounded text-[11px] inline-flex items-center gap-0.5"><i class="fa-solid fa-at text-[9px]"></i>${p1}</span>`;
             });
+
+            return escaped;
         }
 
         function appendChatMessageDOM(msg) {
