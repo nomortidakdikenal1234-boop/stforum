@@ -642,14 +642,19 @@
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <h2 class="text-xl font-bold text-slate-900 font-display mb-1">Pengaturan Profil</h2>
-            <p class="text-xs text-slate-500 mb-4">Ubah foto profil Anda (Maksimal ukuran 1MB).</p>
+            <p class="text-xs text-slate-500 mb-4">Ubah nama / username dan foto profil Anda.</p>
             
             <form onsubmit="handleSaveProfile(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama / Username</label>
+                    <input type="text" id="profile-username-input" required placeholder="Masukkan Nama atau Username..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
                 <div class="flex flex-col items-center gap-3">
                     <img id="profile-preview-avatar" src="https://placehold.co/100/000090/ffffff?text=ST" alt="Preview Avatar" 
                          class="w-20 h-20 rounded-full border-2 border-[#000090] object-cover shadow">
                     <div class="w-full">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1 text-center">Pilih Foto Profil Baru</label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1 text-center">Pilih Foto Profil Baru (Opsional)</label>
                         <input type="file" id="profile-avatar-file" accept="image/*" onchange="handleAvatarFileSelect(event)"
                                class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#000090] hover:file:bg-blue-100 cursor-pointer">
                         <span class="block text-[10px] text-slate-400 text-center mt-1">*Maksimal file: 1 MB (PNG, JPG, WEBP)</span>
@@ -824,34 +829,86 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // ========================================================
-        // 1. GLOBAL STATE & SUPABASE INITIALIZATION
+        // 4. PROFILE PICTURE & USERNAME UPLOAD HANDLER
         // ========================================================
-        const SUPABASE_URL = "https://ubhnyqudmrkqmziooqfr.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaG55cXVkbXJrcW16aW9vcWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzY1NDgsImV4cCI6MjEwMzMxMjU0OH0.Pt5be35QWOBG8r6y4UvIhuXLi96utYKi8uaq6cFPS9Q";
-        
-        let supabaseClient = null;
-        let currentUserProfile = null;
-        let uploadedAvatarBase64 = null;
-        let chatMessageReactions = {};
+        function openProfileModal() {
+            if (!currentUserProfile) return;
+            const preview = document.getElementById('profile-preview-avatar');
+            if (preview) preview.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
+            const usernameInput = document.getElementById('profile-username-input');
+            if (usernameInput) usernameInput.value = currentUserProfile.username || '';
+            uploadedAvatarBase64 = null;
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
 
-        // DYNAMIC DATA STORES
-        let staffMembersList = [];
-        let partnershipsList = [];
-        let announcementsList = [
-            {
-                id: 'ann_1',
-                title: 'Selamat Datang di Official Forum SkyTechnology Company!',
-                content: 'Halo seluruh anggota dan rekan kerja! Forum ini adalah wadah resmi komunikasi, koordinasi divisi, pengumuman update sistem, serta informasi rekrutmen dan kolaborasi partner SkyTechnology Company.',
-                created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-                author: 'Administrator'
-            },
-            {
-                id: 'ann_2',
-                title: 'Pembaruan Fitur: Realtime Chatbox, Reaksi Emoji, & Link Otomatis',
-                content: 'Kini fitur chatbox telah mendukung pengiriman link interaktif yang bisa langsung diklik, mention sesama anggota (@username), serta pemberian reaksi emoji langsung pada setiap pesan.',
-                created_at: new Date(Date.now() - 86400000).toISOString(),
-                author: 'Staff Team'
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        function handleAvatarFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 1024 * 1024) {
+                showToast('Ukuran file foto melebihi 1MB! Pilih file lebih kecil.', 'error');
+                e.target.value = '';
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedAvatarBase64 = event.target.result;
+                const preview = document.getElementById('profile-preview-avatar');
+                if (preview) preview.src = uploadedAvatarBase64;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handleSaveProfile(e) {
+            e.preventDefault();
+            if (!currentUserProfile) return;
+
+            const btn = document.getElementById('profile-save-btn');
+            const newUsername = document.getElementById('profile-username-input').value.trim();
+
+            if (!newUsername) {
+                showToast('Nama / Username tidak boleh kosong.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Menyimpan...';
+
+            const updatePayload = { username: newUsername };
+            if (uploadedAvatarBase64) {
+                updatePayload.avatar_url = uploadedAvatarBase64;
+            }
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .update(updatePayload)
+                    .eq('id', currentUserProfile.id);
+
+                if (error) {
+                    showToast('Gagal mengubah profil: ' + error.message, 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Simpan Perubahan Profil';
+                    return;
+                }
+            }
+
+            currentUserProfile.username = newUsername;
+            if (uploadedAvatarBase64) {
+                currentUserProfile.avatar_url = uploadedAvatarBase64;
+            }
+
+            updateUserUI(currentUserProfile);
+            btn.disabled = false;
+            btn.innerText = 'Simpan Perubahan Profil';
+            closeProfileModal();
+            showToast('Profil berhasil diperbarui!', 'success');
+        }
         ];
 
         let recruitmentInfoData = {
