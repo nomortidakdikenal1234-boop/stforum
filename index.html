@@ -161,7 +161,7 @@
                 <!-- Functional Live Search Bar with Dropdown -->
                 <div class="relative w-48 sm:w-72">
                     <div class="flex items-center relative">
-                        <input type="text" id="forum-search-input" placeholder="Search forums, announcements..." 
+                        <input type="text" id="forum-search-input" placeholder="Cari forum, pengumuman, partner..." 
                                oninput="handleSearchInput(this.value)"
                                onfocus="handleSearchInput(this.value)"
                                class="w-full bg-blue-950/60 border border-blue-400/30 rounded-full px-4 py-1.5 pl-9 pr-7 text-xs text-white placeholder-blue-200/70 focus:outline-none focus:bg-blue-950 focus:border-white transition-all">
@@ -177,9 +177,9 @@
                     </div>
                 </div>
 
-                <!-- Dynamic Auth Header Right (Only Login button when logged out) -->
+                <!-- Dynamic Auth Header Right -->
                 <div id="auth-header-state" class="flex items-center gap-3">
-                    <!-- Logged Out State (Only Login Button) -->
+                    <!-- Logged Out State -->
                     <div id="logged-out-view" class="flex items-center gap-2">
                         <button onclick="openLoginModal()" class="px-5 py-1.5 bg-white text-[#000090] hover:bg-blue-50 rounded-md text-xs font-bold transition cursor-pointer shadow-sm">
                             Login
@@ -269,7 +269,7 @@
                     <div id="chatbox-messages" class="h-44 p-4 overflow-y-auto space-y-2 text-xs custom-scrollbar bg-slate-50/50">
                         <div id="chatbox-empty-notice" class="h-full flex flex-col items-center justify-center text-slate-400 text-center py-6">
                             <i class="fa-regular fa-comment-dots text-2xl mb-1 text-slate-300"></i>
-                            <p>Belum ada pesan di chatbox. Mulai percakapan sekarang!</p>
+                            <p>Belum ada pesan di chatbox. Mulai percakapan sekarang.</p>
                         </div>
                     </div>
 
@@ -331,6 +331,20 @@
                                     <div>
                                         <a href="javascript:void(0)" class="font-bold text-sm text-slate-900 group-hover:text-[#000090] transition">Recruitment Information</a>
                                         <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">Informasi pendaftaran lowongan posisi Staff, teknisi, dan pendaftaran role resmi.</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+
+                            <!-- Subforum 4: Partnership -->
+                            <div class="p-4 flex items-center justify-between hover:bg-slate-50/80 transition group cursor-pointer" onclick="openSubforum('Partnership')">
+                                <div class="flex items-start gap-3.5 flex-1">
+                                    <div class="w-10 h-10 rounded bg-blue-50 text-[#000090] flex items-center justify-center flex-shrink-0 group-hover:bg-[#000090] group-hover:text-white transition">
+                                        <i class="fa-solid fa-handshake-angle text-base"></i>
+                                    </div>
+                                    <div>
+                                        <a href="javascript:void(0)" class="font-bold text-sm text-slate-900 group-hover:text-[#000090] transition">Partnership</a>
+                                        <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">Daftar mitra bisnis resmi, partner komunitas, dan aliansi strategis SkyTechnology.</p>
                                     </div>
                                 </div>
                                 <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i>
@@ -397,7 +411,7 @@
                             </div>
                         </div>
 
-                        <!-- Dynamic Staff Directory Content (Clean Empty State) -->
+                        <!-- Dynamic Staff Directory Content -->
                         <div id="staff-directory-content" class="space-y-6">
                             <div class="text-center py-8 text-slate-400 text-xs">
                                 <i class="fa-solid fa-circle-notch animate-spin text-xl mb-2 text-[#000090]"></i>
@@ -455,7 +469,7 @@
                                         <li>Aktif di komunitas & forum SkyTechnology.</li>
                                         <li>Memiliki integritas, kejujuran, dan komunikasi yang baik.</li>
                                         <li>Siap membantu anggota komunitas dan mendukung operasional.</li>
-                                        <li>Mengirimkan alasan pengajuan melalui tombol **Request Role**.</li>
+                                        <li>Mengirimkan alasan pengajuan melalui tombol Request Role.</li>
                                     </ul>
                                 </div>
 
@@ -479,6 +493,41 @@
                                     <i class="fa-solid fa-id-card text-amber-400"></i>
                                     <span>Kirim Pengajuan Request Role Sekarang</span>
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: PARTNERSHIP SUBFORUM -->
+                <div id="view-partnership" class="hidden space-y-4">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden p-6 space-y-6">
+                        <div class="border-b border-slate-100 pb-4 flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-3">
+                                <button onclick="switchTab('home')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-md transition flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-sm flex-shrink-0">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                    <span>Kembali</span>
+                                </button>
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
+                                        <i class="fa-solid fa-handshake-angle text-[#000090]"></i>
+                                        <span>SkyTechnology Official Partnerships</span>
+                                    </h2>
+                                    <p class="text-xs text-slate-500 mt-0.5">Daftar partner resmi, sponsor, dan mitra kolaborasi SkyTechnology Company.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="admin-manage-partners-btn" onclick="openManagePartnershipModal()" class="hidden px-3 py-1.5 bg-[#000090] hover:bg-blue-900 text-white text-xs font-bold rounded-md transition shadow cursor-pointer flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>Tambah / Kelola Partner</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Partnership Grid Content -->
+                        <div id="partnership-directory-content" class="space-y-6">
+                            <div class="text-center py-8 text-slate-400 text-xs">
+                                <i class="fa-solid fa-circle-notch animate-spin text-xl mb-2 text-[#000090]"></i>
+                                <p>Memuat data partnership...</p>
                             </div>
                         </div>
                     </div>
@@ -532,7 +581,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" required placeholder="••••••••" 
+                    <input type="password" id="login-password" required placeholder="Masukkan password..." 
                            class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
                 </div>
                 <button type="submit" id="login-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
@@ -565,7 +614,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="reg-password" required placeholder="•••••••• (Min. 6 karakter)" minlength="6"
+                    <input type="password" id="reg-password" required placeholder="Minimal 6 karakter..." minlength="6"
                            class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
                 </div>
                 <button type="submit" id="reg-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
@@ -581,7 +630,7 @@
         </div>
     </div>
 
-    <!-- REQUEST ROLE MODAL (Staff & Customer Options) -->
+    <!-- REQUEST ROLE MODAL -->
     <div id="request-role-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 relative">
             <button onclick="closeRequestRoleModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -776,6 +825,51 @@
         </div>
     </div>
 
+    <!-- MANAGE PARTNERSHIP MODAL (ADMIN ONLY) -->
+    <div id="manage-partnership-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 relative">
+            <button onclick="closeManagePartnershipModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900 font-display mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-handshake-angle text-[#000090]"></i>
+                <span>Tambah / Kelola Partnership</span>
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Tambahkan nama mitra resmi, logo, dan detail kolaborasi.</p>
+            
+            <form onsubmit="handleSavePartnership(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Partner / Komunitas / Brand</label>
+                    <input type="text" id="partner-input-name" required placeholder="Contoh: Sky AI Community" 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori Kemitraan</label>
+                    <input type="text" id="partner-input-category" required placeholder="Contoh: Strategic Partner, Media Partner, Official Sponsor..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Singkat Kolaborasi</label>
+                    <textarea id="partner-input-desc" rows="3" placeholder="Contoh: Mitra teknologi penyedia solusi integrasi AI dan sistem otomatisasi." 
+                              class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">URL Logo Partner (Opsional)</label>
+                    <input type="text" id="partner-input-logo" placeholder="https://..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">URL Website / Kontak / Discord (Opsional)</label>
+                    <input type="text" id="partner-input-link" placeholder="https://..." 
+                           class="w-full border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#000090]">
+                </div>
+                <button type="submit" id="partner-submit-btn" class="w-full py-2.5 bg-[#000090] hover:bg-[#000070] text-white font-bold rounded-md text-xs transition cursor-pointer">
+                    Simpan Mitra Partnership
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC WITH SUPABASE CLIENT INTEGRATION -->
     <script>
         // ========================================================
@@ -787,10 +881,11 @@
         let supabaseClient = null;
         let currentUserProfile = null;
         let uploadedAvatarBase64 = null;
-        let localRoleRequests = []; // Fallback memory store for role requests
+        let localRoleRequests = [];
 
-        // DYNAMIC DATA FOR STAFF AND RECRUITMENT (Clean Empty default state)
+        // DYNAMIC DATA STORES
         let staffMembersList = [];
+        let partnershipsList = [];
 
         let recruitmentInfoData = {
             status: 'OPEN',
@@ -809,7 +904,7 @@
         };
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // Load saved local fallback role requests & staff/recruitment data
+            // Load saved local fallback stores
             try {
                 const savedReqs = localStorage.getItem('sky_role_requests');
                 if (savedReqs) localRoleRequests = JSON.parse(savedReqs);
@@ -817,12 +912,16 @@
                 const savedStaff = localStorage.getItem('sky_staff_members');
                 if (savedStaff) staffMembersList = JSON.parse(savedStaff);
 
+                const savedPartners = localStorage.getItem('sky_partnerships');
+                if (savedPartners) partnershipsList = JSON.parse(savedPartners);
+
                 const savedRec = localStorage.getItem('sky_recruitment_info');
                 if (savedRec) recruitmentInfoData = JSON.parse(savedRec);
             } catch (e) {}
 
             renderStaffList();
             renderRecruitmentInfo();
+            renderPartnershipsList();
 
             if (window.supabase) {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -831,10 +930,11 @@
                 subscribeChatboxRealtime();
                 await loadStaffMembersFromSupabase();
                 await loadRecruitmentInfoFromSupabase();
+                await loadPartnershipsFromSupabase();
             }
         });
 
-        // TOAST SYSTEM (Replaces alert)
+        // TOAST NOTIFICATION SYSTEM
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -921,6 +1021,7 @@
             const adminRequestsNavBtn = document.getElementById('admin-requests-nav-btn');
             const adminStaffBtn = document.getElementById('admin-manage-staff-btn');
             const adminRecruitmentBtn = document.getElementById('admin-edit-recruitment-btn');
+            const adminPartnersBtn = document.getElementById('admin-manage-partners-btn');
 
             if (profile) {
                 if (loggedOutView) loggedOutView.classList.add('hidden');
@@ -938,7 +1039,6 @@
                 if (nameElem) nameElem.innerText = profile.username || 'User';
                 if (avatarElem) avatarElem.src = profile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
                 
-                // Color badges: Staff = Biru, Customer = Hijau, Admin = Amber, Member = Blue-Slate
                 if (roleBadge) {
                     roleBadge.innerText = profile.role || 'Member';
                     if (profile.role === 'Administrator') {
@@ -976,6 +1076,11 @@
                     if (isAdminOrStaff) adminRecruitmentBtn.classList.remove('hidden');
                     else adminRecruitmentBtn.classList.add('hidden');
                 }
+
+                if (adminPartnersBtn) {
+                    if (isAdminOrStaff) adminPartnersBtn.classList.remove('hidden');
+                    else adminPartnersBtn.classList.add('hidden');
+                }
             } else {
                 if (loggedOutView) loggedOutView.classList.remove('hidden');
                 if (loggedInView) loggedInView.classList.add('hidden');
@@ -983,7 +1088,11 @@
                 if (adminRequestsNavBtn) adminRequestsNavBtn.classList.add('hidden');
                 if (adminStaffBtn) adminStaffBtn.classList.add('hidden');
                 if (adminRecruitmentBtn) adminRecruitmentBtn.classList.add('hidden');
+                if (adminPartnersBtn) adminPartnersBtn.classList.add('hidden');
             }
+
+            renderStaffList();
+            renderPartnershipsList();
         }
 
         async function handleLogin(e) {
@@ -1126,8 +1235,10 @@
                 created_at: new Date().toISOString()
             };
 
+            let supabaseError = null;
+
             if (supabaseClient) {
-                await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('role_requests')
                     .insert([{
                         user_id: currentUserProfile.id,
@@ -1135,7 +1246,15 @@
                         requested_role: roleType,
                         reason: reason,
                         status: 'pending'
-                    }]);
+                    }])
+                    .select();
+
+                if (error) {
+                    supabaseError = error;
+                    console.error("Supabase role_requests insert error:", error);
+                } else if (data && data[0]) {
+                    newRequestObj.id = data[0].id;
+                }
             }
 
             localRoleRequests.unshift(newRequestObj);
@@ -1148,7 +1267,11 @@
             closeRequestRoleModal();
             document.getElementById('request-role-reason').value = '';
 
-            showToast(`Pengajuan role ${roleType} berhasil dikirim ke Inbox Admin!`, 'success');
+            if (supabaseError) {
+                showToast(`Pengajuan disimpan secara lokal. (Supabase Info: ${supabaseError.message})`, 'info');
+            } else {
+                showToast(`Pengajuan role ${roleType} berhasil dikirim ke Inbox Admin!`, 'success');
+            }
             updateRoleRequestsBadgeCount();
         }
 
@@ -1186,13 +1309,30 @@
             let requestsList = [...localRoleRequests];
 
             if (supabaseClient) {
-                const { data, error } = await supabaseClient
+                // Try select with joined profiles
+                let { data, error } = await supabaseClient
                     .from('role_requests')
                     .select('*, profiles(avatar_url)')
                     .order('created_at', { ascending: false });
 
+                // Fallback to simple select if join fails
+                if (error) {
+                    console.warn("Join query failed, trying plain select:", error);
+                    const fallback = await supabaseClient
+                        .from('role_requests')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    data = fallback.data;
+                    error = fallback.error;
+                }
+
                 if (data && data.length > 0) {
-                    requestsList = data;
+                    // Merge local offline requests with Supabase items
+                    const supabaseIds = new Set(data.map(d => d.id));
+                    const unsyncedLocal = localRoleRequests.filter(l => !supabaseIds.has(l.id));
+                    requestsList = [...unsyncedLocal, ...data];
+                } else if (error) {
+                    console.error("Fetching role_requests error:", error);
                 }
             }
 
@@ -1293,8 +1433,8 @@
             }
 
             showToast(action === 'approved' 
-                ? `Role ${requestedRole} untuk ${targetUsername} berhasil disetujui (Accept)!` 
-                : `Pengajuan role ${targetUsername} telah ditolak (Denied).`, 
+                ? `Role ${requestedRole} untuk ${targetUsername} berhasil disetujui!` 
+                : `Pengajuan role ${targetUsername} telah ditolak.`, 
                 action === 'approved' ? 'success' : 'info'
             );
 
@@ -1608,7 +1748,8 @@
             const subforums = [
                 { title: 'Announcement', desc: 'Official news for SkyTechnology', icon: 'fa-bullhorn', tab: 'Announcement' },
                 { title: 'List Staff', desc: 'Daftar jajaran pimpinan dan staff', icon: 'fa-users-gear', tab: 'List Staff' },
-                { title: 'Recruitment Information', desc: 'Informasi lowongan role & staff', icon: 'fa-user-plus', tab: 'Recruitment' }
+                { title: 'Recruitment Information', desc: 'Informasi lowongan role & staff', icon: 'fa-user-plus', tab: 'Recruitment' },
+                { title: 'Partnership', desc: 'Daftar mitra dan partner resmi', icon: 'fa-handshake-angle', tab: 'Partnership' }
             ];
 
             subforums.forEach(sf => {
@@ -1619,6 +1760,19 @@
                         subtitle: sf.desc,
                         icon: sf.icon,
                         action: () => openSubforum(sf.tab)
+                    });
+                }
+            });
+
+            // 2. Search Partners
+            partnershipsList.forEach(p => {
+                if (p.name.toLowerCase().includes(q) || (p.description && p.description.toLowerCase().includes(q))) {
+                    results.push({
+                        type: 'Partner',
+                        title: p.name,
+                        subtitle: p.category || 'Mitra Resmi',
+                        icon: 'fa-handshake-angle',
+                        action: () => openSubforum('Partnership')
                     });
                 }
             });
@@ -1669,7 +1823,7 @@
         });
 
         // ========================================================
-        // 9. DYNAMIC LIST STAFF & RECRUITMENT MANAGERS WITH SUPABASE INTEGRATION
+        // 9. DYNAMIC LIST STAFF & RECRUITMENT MANAGERS WITH SUPABASE
         // ========================================================
         async function loadStaffMembersFromSupabase() {
             if (!supabaseClient) return;
@@ -1979,7 +2133,166 @@
         }
 
         // ========================================================
-        // 10. GENERAL UI & NAVIGATION CONTROLS
+        // 10. DYNAMIC PARTNERSHIP SYSTEM WITH SUPABASE
+        // ========================================================
+        async function loadPartnershipsFromSupabase() {
+            if (!supabaseClient) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('partnerships')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+
+                if (!error && data) {
+                    partnershipsList = data;
+                    renderPartnershipsList();
+                }
+            } catch (e) {
+                console.warn('Error loading partnerships from Supabase:', e);
+            }
+        }
+
+        function renderPartnershipsList() {
+            const container = document.getElementById('partnership-directory-content');
+            if (!container) return;
+
+            const isAdmin = currentUserProfile && (currentUserProfile.role === 'Administrator' || currentUserProfile.role === 'Staff');
+
+            if (partnershipsList.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 text-xs space-y-2">
+                        <i class="fa-solid fa-handshake-angle text-3xl mb-1 text-slate-300"></i>
+                        <p>Belum ada mitra / partner resmi yang ditambahkan.</p>
+                        ${isAdmin ? `<p class="text-[11px] text-blue-600 font-semibold">Gunakan tombol "Tambah / Kelola Partner" di atas untuk menambahkan kolaborator atau sponsor baru.</p>` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            `;
+
+            partnershipsList.forEach(p => {
+                const logo = p.logo_url || 'https://placehold.co/120/000090/ffffff?text=Partner';
+                html += `
+                    <div class="bg-slate-50 hover:bg-slate-50/80 border border-slate-200 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-md relative group">
+                        <div>
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                    <img src="${escapeHtml(logo)}" alt="${escapeHtml(p.name)}" class="w-full h-full object-contain rounded-lg" onerror="this.onerror=null; this.src='https://placehold.co/120/000090/ffffff?text=Partner';">
+                                </div>
+                                <span class="px-2.5 py-0.5 bg-blue-100 text-[#000090] text-[10px] font-bold rounded-full text-right truncate max-w-[140px]">
+                                    ${escapeHtml(p.category || 'Partner')}
+                                </span>
+                            </div>
+
+                            <h3 class="font-extrabold text-sm text-slate-900 font-display line-clamp-1">${escapeHtml(p.name)}</h3>
+                            <p class="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed">${escapeHtml(p.description || 'Mitra resmi SkyTechnology Company.')}</p>
+                        </div>
+
+                        <div class="pt-4 mt-3 border-t border-slate-200/70 flex items-center justify-between gap-2">
+                            ${p.link_url ? `
+                                <a href="${escapeHtml(p.link_url)}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#000090] hover:text-blue-700 flex items-center gap-1.5 transition">
+                                    <span>Kunjungi Partner</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                </a>
+                            ` : `<span class="text-[10px] text-slate-400 font-medium">Mitra Terverifikasi</span>`}
+
+                            ${isAdmin ? `
+                                <button onclick="deletePartnership('${p.id}')" title="Hapus Partner" class="text-red-400 hover:text-red-600 text-xs p-1 cursor-pointer transition opacity-70 hover:opacity-100">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function openManagePartnershipModal() {
+            if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
+                showToast('Akses Ditolak: Fitur ini khusus Admin / Staff.', 'error');
+                return;
+            }
+            document.getElementById('manage-partnership-modal').classList.remove('hidden');
+        }
+
+        function closeManagePartnershipModal() {
+            document.getElementById('manage-partnership-modal').classList.add('hidden');
+        }
+
+        async function handleSavePartnership(e) {
+            e.preventDefault();
+            const name = document.getElementById('partner-input-name').value.trim();
+            const category = document.getElementById('partner-input-category').value.trim();
+            const desc = document.getElementById('partner-input-desc').value.trim();
+            const logo = document.getElementById('partner-input-logo').value.trim();
+            const link = document.getElementById('partner-input-link').value.trim();
+
+            const newPartner = {
+                name: name,
+                category: category || 'Strategic Partner',
+                description: desc,
+                logo_url: logo || '',
+                link_url: link || ''
+            };
+
+            if (supabaseClient) {
+                const { error } = await supabaseClient
+                    .from('partnerships')
+                    .insert([newPartner]);
+
+                if (error) {
+                    showToast('Gagal menyimpan partner ke database: ' + error.message, 'error');
+                } else {
+                    showToast(`Mitra "${name}" berhasil disimpan ke database!`, 'success');
+                    await loadPartnershipsFromSupabase();
+                }
+            } else {
+                newPartner.id = 'part_' + Date.now();
+                partnershipsList.push(newPartner);
+                try { localStorage.setItem('sky_partnerships', JSON.stringify(partnershipsList)); } catch (err) {}
+                renderPartnershipsList();
+                showToast(`Mitra "${name}" berhasil ditambahkan!`, 'success');
+            }
+
+            closeManagePartnershipModal();
+            document.getElementById('partner-input-name').value = '';
+            document.getElementById('partner-input-category').value = '';
+            document.getElementById('partner-input-desc').value = '';
+            document.getElementById('partner-input-logo').value = '';
+            document.getElementById('partner-input-link').value = '';
+        }
+
+        async function deletePartnership(id) {
+            if (supabaseClient && typeof id === 'string' && id.includes('-')) {
+                const { error } = await supabaseClient
+                    .from('partnerships')
+                    .delete()
+                    .eq('id', id);
+
+                if (!error) {
+                    showToast('Mitra telah dihapus dari database.', 'info');
+                    await loadPartnershipsFromSupabase();
+                    return;
+                }
+            }
+
+            partnershipsList = partnershipsList.filter(p => p.id !== id);
+            try {
+                localStorage.setItem('sky_partnerships', JSON.stringify(partnershipsList));
+            } catch (e) {}
+
+            renderPartnershipsList();
+            showToast('Mitra telah dihapus.', 'info');
+        }
+
+        // ========================================================
+        // 11. GENERAL UI & NAVIGATION CONTROLS
         // ========================================================
         function enterForum() {
             const loadingOverlay = document.getElementById('loading-overlay');
@@ -2003,6 +2316,7 @@
             const viewAnn = document.getElementById('view-announcements');
             const viewStaff = document.getElementById('view-list-staff');
             const viewRecruitment = document.getElementById('view-recruitment');
+            const viewPartnership = document.getElementById('view-partnership');
             const breadcrumb = document.getElementById('breadcrumb-current');
 
             if (tab === 'home') {
@@ -2010,6 +2324,7 @@
                 if (viewAnn) viewAnn.classList.add('hidden');
                 if (viewStaff) viewStaff.classList.add('hidden');
                 if (viewRecruitment) viewRecruitment.classList.add('hidden');
+                if (viewPartnership) viewPartnership.classList.add('hidden');
                 if (breadcrumb) breadcrumb.innerText = 'Forums';
             }
         }
@@ -2019,12 +2334,14 @@
             const viewAnn = document.getElementById('view-announcements');
             const viewStaff = document.getElementById('view-list-staff');
             const viewRecruitment = document.getElementById('view-recruitment');
+            const viewPartnership = document.getElementById('view-partnership');
             const breadcrumb = document.getElementById('breadcrumb-current');
 
             if (viewHome) viewHome.classList.add('hidden');
             if (viewAnn) viewAnn.classList.add('hidden');
             if (viewStaff) viewStaff.classList.add('hidden');
             if (viewRecruitment) viewRecruitment.classList.add('hidden');
+            if (viewPartnership) viewPartnership.classList.add('hidden');
 
             if (name === 'Announcement') {
                 if (viewAnn) viewAnn.classList.remove('hidden');
@@ -2036,6 +2353,9 @@
             } else if (name === 'Recruitment' || name === 'Recruitment Information') {
                 if (viewRecruitment) viewRecruitment.classList.remove('hidden');
                 if (breadcrumb) breadcrumb.innerText = 'Recruitment Information';
+            } else if (name === 'Partnership') {
+                if (viewPartnership) viewPartnership.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Partnership';
             }
         }
 
@@ -2055,7 +2375,7 @@
         }
         function openCreateAnnouncementModal() {
             if (!currentUserProfile || (currentUserProfile.role !== 'Administrator' && currentUserProfile.role !== 'Staff')) {
-                showToast('Hanya Administrator dan Staff yang dapat membuat pengumuman!', 'error');
+                showToast('Hanya Administrator dan Staff yang dapat membuat pengumuman.', 'error');
                 return;
             }
             document.getElementById('announcement-modal').classList.remove('hidden');
