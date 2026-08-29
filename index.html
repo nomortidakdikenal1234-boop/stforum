@@ -1582,6 +1582,8 @@
             const container = document.getElementById('announcements-list-detailed');
             if (!container) return;
 
+            const isStaff = currentUserProfile && currentUserProfile.role === 'Staff';
+
             if (supabaseClient) {
                 try {
                     const { data, error } = await supabaseClient
@@ -1629,10 +1631,39 @@
                             <span class="flex items-center gap-1.5 font-medium">
                                 <i class="fa-solid fa-user-shield text-blue-600"></i> Diposting oleh: <strong>${escapeHtml(authorName)}</strong>
                             </span>
+                            ${isStaff ? `
+                                <button onclick="deleteAnnouncement('${ann.id}')" title="Hapus Pengumuman" class="text-red-500 hover:text-red-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Hapus</span>
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        async function deleteAnnouncement(annId) {
+            if (!currentUserProfile || currentUserProfile.role !== 'Staff') {
+                showToast('Akses Ditolak: Hanya Staff yang dapat menghapus pengumuman.', 'error');
+                return;
+            }
+
+            if (supabaseClient && typeof annId === 'string' && annId.length > 20) {
+                const { error } = await supabaseClient
+                    .from('announcements')
+                    .delete()
+                    .eq('id', annId);
+
+                if (error) {
+                    showToast('Gagal menghapus pengumuman dari database: ' + error.message, 'error');
+                    return;
+                }
+            }
+
+            announcementsList = announcementsList.filter(ann => ann.id !== annId);
+            showToast('Pengumuman berhasil dihapus!', 'info');
+            loadAnnouncements();
         }
 
         async function handleCreateAnnouncement(e) {
