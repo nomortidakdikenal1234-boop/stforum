@@ -942,6 +942,7 @@
                 if (savedProfile) currentUserProfile = JSON.parse(savedProfile);
             } catch (e) {}
 
+            // Render cached data immediately for instant initial display
             renderStaffList();
             renderRecruitmentInfo();
             renderPartnershipsList();
@@ -950,12 +951,17 @@
 
             const client = getSupabase();
             if (client) {
-                await checkUserSession();
-                loadChatboxMessages();
-                subscribeChatboxRealtime();
-                await loadStaffMembersFromSupabase();
-                await loadRecruitmentInfoFromSupabase();
-                await loadPartnershipsFromSupabase();
+                // PARALLEL EXECUTION: Fetch all database tables concurrently to eliminate load delay
+                Promise.allSettled([
+                    checkUserSession(),
+                    loadChatboxMessages(),
+                    loadStaffMembersFromSupabase(),
+                    loadRecruitmentInfoFromSupabase(),
+                    loadPartnershipsFromSupabase(),
+                    loadAnnouncements()
+                ]).then(() => {
+                    subscribeChatboxRealtime();
+                });
             }
         });
 
@@ -1162,15 +1168,127 @@
             renderAllChatMessages();
         }
 
-        function openProfileModal() {
-            if (!currentUserProfile) {
-                openLoginModal();
+        // ========================================================
+        // 4b. AUTHENTICATION HANDLERS (LOGIN, REGISTER, LOGOUT, PROFILE)
+        // ========================================================
+        async function handleLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
+            const submitBtn = document.getElementById('login-submit-btn');
+
+            if (!usernameInput || !passwordInput) {
+                showToast('Username dan password wajib diisi.', 'error');
                 return;
             }
-            const nameInput = document.getElementById('profile-username-input');
-            const previewAvatar = document.getElementById('profile-preview-avatar');
-            if (nameInput) nameInput.value = currentUserProfile.username || '';
-            if (previewAvatar) previewAvatar.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Logging in...';
+
+            const client = getSupabase();
+            if (client) {
+                const email = usernameToEmail(usernameInput);
+                const { data, error } = await client.auth.signInWithPassword({
+                    email: email,
+                    password: passwordInput
+                });
+
+                if (error) {
+                    showToast('Login gagal: ' + error.message, 'error');
+                } else {
+                    showToast(`Selamat datang kembali, ${usernameInput}!`, 'success');
+                    closeLoginModal();
+                    if (data.user) {
+                        await fetchUserProfile(data.user.id, data.user);
+                    }
+                }
+            } else {
+                currentUserProfile = {
+                    id: 'usr_local_' + Date.now(),
+                    username: usernameInput,
+                    role: (usernameInput.toLowerCase() === 'frederick jhonatan') ? 'Staff' : 'Member',
+                    avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(usernameInput)}`
+                };
+                try { localStorage.setItem('sky_user_profile', JSON.stringify(currentUserProfile)); } catch(err){}
+                updateUserUI(currentUserProfile);
+                showToast(`Selamat datang, ${usernameInput}!`, 'success');
+                closeLoginModal();
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Sign In';
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('reg-username').value.trim();
+            const passwordInput = document.getElementById('reg-password').value;
+            const submitBtn = document.getElementById('reg-submit-btn');
+
+            if (!usernameInput || !passwordInput) {
+                showToast('Lengkapi formulir pendaftaran.', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Creating Account...';
+
+            const client = getSupabase();
+            if (client) {
+                const email = usernameToEmail(usernameInput);
+                const { data, error } = await client.auth.signUp({
+                    email: email,
+                    password: passwordInput,
+                    options: {
+                        data: {
+                            username: usernameInput,
+                            avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(usernameInput)}`
+                        }
+                    }
+                });
+
+                if (error) {
+                    showToast('Registrasi gagal: ' + error.message, 'error');
+                } else {
+                    showToast('Registrasi berhasil! Silakan login.', 'success');
+                    closeRegisterModal();
+                    openLoginModal();
+                }
+            } else {
+                currentUserProfile = {
+                    id: 'usr_local_' + Date.now(),
+                    username: usernameInput,
+                    role: (usernameInput.toLowerCase() === 'frederick jhonatan') ? 'Staff' : 'Member',
+                    avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(usernameInput)}`
+                };
+                try { localStorage.setItem('sky_user_profile', JSON.stringify(currentUserProfile)); } catch(err){}
+                updateUserUI(currentUserProfile);
+                showToast('Registrasi berhasil!', 'success');
+                closeRegisterModal();
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Register Now';
+        }
+
+        async function handleLogout() {
+            const client = getSupabase();
+            if (client) {
+                await client.auth.signOut();
+            }
+            currentUserProfile = null;
+            try { localStorage.removeItem('sky_user_profile'); } catch(err){}
+            updateUserUI(null);
+            showToast('Anda telah logout.', 'info');
+        }
+
+        function openProfileModal() {
+            if (!currentUserProfile) return;
+            document.getElementById('profile-username-input').value = currentUserProfile.username || '';
+            const avatarPreview = document.getElementById('profile-preview-avatar');
+            if (avatarPreview && currentUserProfile.avatar_url) {
+                avatarPreview.src = currentUserProfile.avatar_url;
+            }
             document.getElementById('profile-modal').classList.remove('hidden');
         }
 
@@ -1179,19 +1297,21 @@
             uploadedAvatarBase64 = null;
         }
 
-        function handleAvatarFileSelect(event) {
-            const file = event.target.files[0];
+        function handleAvatarFileSelect(e) {
+            const file = e.target.files[0];
             if (!file) return;
+
             if (file.size > 1024 * 1024) {
-                showToast('Ukuran foto terlalu besar! Maksimal 1 MB.', 'error');
-                event.target.value = '';
+                showToast('Ukuran foto maksimal 1 MB.', 'error');
+                e.target.value = '';
                 return;
             }
+
             const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedAvatarBase64 = e.target.result;
-                const preview = document.getElementById('profile-preview-avatar');
-                if (preview) preview.src = uploadedAvatarBase64;
+            reader.onload = function(evt) {
+                uploadedAvatarBase64 = evt.target.result;
+                const avatarPreview = document.getElementById('profile-preview-avatar');
+                if (avatarPreview) avatarPreview.src = uploadedAvatarBase64;
             };
             reader.readAsDataURL(file);
         }
@@ -1201,324 +1321,82 @@
             if (!currentUserProfile) return;
 
             const newUsername = document.getElementById('profile-username-input').value.trim();
-            if (!newUsername) {
-                showToast('Username tidak boleh kosong!', 'error');
-                return;
-            }
-
-            const newAvatar = uploadedAvatarBase64 || currentUserProfile.avatar_url;
+            if (!newUsername) return;
 
             const btn = document.getElementById('profile-save-btn');
-            if (btn) { btn.disabled = true; btn.innerText = 'Menyimpan...'; }
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
 
-            const oldUsername = currentUserProfile.username;
-            currentUserProfile.username = newUsername;
-            currentUserProfile.avatar_url = newAvatar;
+            let newAvatar = uploadedAvatarBase64 || currentUserProfile.avatar_url;
 
-            // Update in Supabase profiles table
             const client = getSupabase();
-            if (client && currentUserProfile.id) {
-                try {
-                    await client.from('profiles').update({
+            if (client && currentUserProfile.id && !currentUserProfile.id.startsWith('usr_local_')) {
+                const { error } = await client
+                    .from('profiles')
+                    .update({
                         username: newUsername,
                         avatar_url: newAvatar
-                    }).eq('id', currentUserProfile.id);
-                } catch (err) {
-                    console.warn('Profile update warning:', err);
-                }
-            }
-
-            // Also update messages in localChatHistory sent by this user
-            localChatHistory.forEach(msg => {
-                if (msg.user_id === currentUserProfile.id || msg.username === oldUsername) {
-                    msg.username = newUsername;
-                    msg.avatar_url = newAvatar;
-                }
-            });
-
-            try {
-                localStorage.setItem('sky_user_profile', JSON.stringify(currentUserProfile));
-                localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory));
-            } catch (err) {}
-
-            updateUserUI(currentUserProfile);
-            closeProfileModal();
-
-            if (btn) { btn.disabled = false; btn.innerText = 'Simpan Perubahan Profil'; }
-            showToast('Profil berhasil diperbarui!', 'success');
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const usernameInput = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            const btn = document.getElementById('login-submit-btn');
-
-            const client = getSupabase();
-            if (!client) {
-                showToast('Supabase client tidak terhubung. Periksa koneksi atau tunggu CDN memuat.', 'error');
-                return;
-            }
-
-            const targetEmail = usernameInput.includes('@') ? usernameInput : usernameToEmail(usernameInput);
-
-            btn.disabled = true;
-            btn.innerText = 'Signing In...';
-
-            try {
-                const { data, error } = await client.auth.signInWithPassword({
-                    email: targetEmail,
-                    password: password
-                });
-
-                btn.disabled = false;
-                btn.innerText = 'Sign In';
+                    })
+                    .eq('id', currentUserProfile.id);
 
                 if (error) {
-                    showToast('Login Gagal: ' + error.message, 'error');
+                    showToast('Gagal menyimpan profil: ' + error.message, 'error');
                 } else {
-                    showToast('Login berhasil! Selamat datang kembali.', 'success');
-                    closeLoginModal();
-                    await checkUserSession();
+                    currentUserProfile.username = newUsername;
+                    currentUserProfile.avatar_url = newAvatar;
+                    try { localStorage.setItem('sky_user_profile', JSON.stringify(currentUserProfile)); } catch(err){}
+                    updateUserUI(currentUserProfile);
+                    showToast('Profil berhasil diperbarui!', 'success');
+                    closeProfileModal();
                 }
-            } catch (err) {
-                btn.disabled = false;
-                btn.innerText = 'Sign In';
-                showToast('Terjadi kesalahan: ' + err.message, 'error');
-            }
-        }
-
-        async function handleRegister(e) {
-            e.preventDefault();
-            const username = document.getElementById('reg-username').value.trim();
-            const password = document.getElementById('reg-password').value;
-            const btn = document.getElementById('reg-submit-btn');
-
-            const client = getSupabase();
-            if (!client) {
-                showToast('Supabase client tidak terhubung.', 'error');
-                return;
+            } else {
+                currentUserProfile.username = newUsername;
+                currentUserProfile.avatar_url = newAvatar;
+                try { localStorage.setItem('sky_user_profile', JSON.stringify(currentUserProfile)); } catch(err){}
+                updateUserUI(currentUserProfile);
+                showToast('Profil berhasil diperbarui!', 'success');
+                closeProfileModal();
             }
 
-            const generatedEmail = usernameToEmail(username);
-
-            btn.disabled = true;
-            btn.innerText = 'Creating Account...';
-
-            try {
-                const { data, error } = await client.auth.signUp({
-                    email: generatedEmail,
-                    password: password,
-                    options: {
-                        data: { username: username }
-                    }
-                });
-
-                btn.disabled = false;
-                btn.innerText = 'Register Now';
-
-                if (error) {
-                    showToast('Pendaftaran Gagal: ' + error.message, 'error');
-                } else {
-                    const { error: autoLoginErr } = await client.auth.signInWithPassword({
-                        email: generatedEmail,
-                        password: password
-                    });
-
-                    if (autoLoginErr) {
-                        showToast('Registrasi Berhasil! Silakan Sign In dengan Nama / Username Anda.', 'success');
-                        closeRegisterModal();
-                        openLoginModal();
-                        document.getElementById('login-username').value = username;
-                    } else {
-                        showToast('Registrasi Berhasil! Anda otomatis masuk.', 'success');
-                        closeRegisterModal();
-                        await checkUserSession();
-                    }
-                }
-            } catch (err) {
-                btn.disabled = false;
-                btn.innerText = 'Register Now';
-                showToast('Terjadi kesalahan: ' + err.message, 'error');
-            }
-        }
-
-        async function handleLogout() {
-            const client = getSupabase();
-            if (client) {
-                await client.auth.signOut();
-            }
-            currentUserProfile = null;
-            updateUserUI(null);
-            showToast('Anda telah logout.', 'info');
-        }
-<!-- ... existing code ...========= -->
-        // ========================================================
-        // EMOJI & REACTION SYSTEM FUNCTIONS
-        // ========================================================
-        function toggleEmojiPicker() {
-            const dropdown = document.getElementById('emoji-picker-dropdown');
-            if (!dropdown) return;
-            dropdown.classList.toggle('hidden');
-            if (!dropdown.classList.contains('hidden')) {
-                switchEmojiTab('popular');
-            }
-        }
-
-        function switchEmojiTab(tabName) {
-            const categories = ['popular', 'smileys', 'gestures', 'objects'];
-            categories.forEach(cat => {
-                const btn = document.getElementById(`emoji-tab-${cat}`);
-                if (btn) {
-                    if (cat === tabName) {
-                        btn.className = 'px-2.5 py-1 rounded-full bg-blue-100 text-[#000090] font-bold whitespace-nowrap transition text-[11px]';
-                    } else {
-                        btn.className = 'px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]';
-                    }
-                }
-            });
-            renderEmojiGrid(tabName);
-        }
-
-        function renderEmojiGrid(tabName) {
-            const container = document.getElementById('emoji-grid-container');
-            if (!container) return;
-            const list = EMOJI_DATA[tabName] || EMOJI_DATA.popular;
-            container.innerHTML = list.map(e => `
-                <button type="button" onclick="insertEmoji('${e}')" class="p-1 hover:bg-slate-100 rounded text-xl transition cursor-pointer flex items-center justify-center">
-                    ${e}
-                </button>
-            `).join('');
-        }
-
-        function insertEmoji(emoji) {
-            const input = document.getElementById('chat-input');
-            if (!input) return;
-            input.value += emoji;
-            input.focus();
-        }
-
-        function toggleReactionPicker(msgId) {
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (picker) {
-                picker.classList.toggle('hidden');
-            }
-        }
-
-        function toggleMessageReaction(msgId, emoji) {
-            if (!chatMessageReactions[msgId]) {
-                chatMessageReactions[msgId] = {};
-            }
-            const currentCount = chatMessageReactions[msgId][emoji] || 0;
-            chatMessageReactions[msgId][emoji] = currentCount + 1;
-
-            try {
-                localStorage.setItem('sky_chat_reactions', JSON.stringify(chatMessageReactions));
-            } catch (e) {}
-
-            const container = document.getElementById(`msg-reactions-${msgId}`);
-            if (container) {
-                container.innerHTML = renderMessageReactionsHTML(msgId);
-            }
-
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (picker) picker.classList.add('hidden');
-        }
-
-        function renderMessageReactionsHTML(msgId) {
-            const reactions = chatMessageReactions[msgId];
-            if (!reactions) return '';
-            return Object.entries(reactions).map(([emoji, count]) => {
-                if (!count) return '';
-                return `<span class="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-[10px] px-1.5 py-0.5 rounded-full text-blue-900 font-semibold">${emoji} ${count}</span>`;
-            }).join('');
+            btn.disabled = false;
+            btn.innerText = 'Simpan Perubahan Profil';
         }
 
         // ========================================================
-        // 5. CHATBOX & MESSAGE HANDLING
+        // 5. CHATBOX LOAD & RENDER SYSTEM
         // ========================================================
-        function formatMessageContent(rawText) {
-            if (!rawText) return '';
-            let safeText = escapeHtml(rawText);
-
-            const urlPattern = /(https?:\/\/[^\s<]+)|(www\.[^\s<]+)/gi;
-            safeText = safeText.replace(urlPattern, function(match) {
-                let href = match;
-                if (!href.startsWith('http://') && !href.startsWith('https://')) {
-                    href = 'https://' + href;
-                }
-                return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 font-semibold underline inline-flex items-center gap-0.5 break-all">${match} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></a>`;
-            });
-
-            const knownUsers = getAllKnownUsernames().sort((a, b) => b.length - a.length);
-
-            knownUsers.forEach(uname => {
-                if (!uname) return;
-                const escaped = uname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`@${escaped}(?=[\\s,.:;!?!]|$|<)`, 'gi');
-                safeText = safeText.replace(regex, function() {
-                    return `<span class="bg-blue-100 text-[#000090] px-1.5 py-0.5 rounded font-semibold text-[11px] inline-block break-all">@${escapeHtml(uname)}</span>`;
-                });
-            });
-
-            const fallbackMentionPattern = /@([a-zA-Z0-9_-]+)/g;
-            safeText = safeText.replace(fallbackMentionPattern, function(match, uname) {
-                if (safeText.includes(`@${uname}</span>`)) return match;
-                return `<span class="bg-blue-100 text-[#000090] px-1.5 py-0.5 rounded font-semibold text-[11px] inline-block break-all">@${uname}</span>`;
-            });
-
-            return safeText;
-        }
-
         async function loadChatboxMessages() {
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('chatbox_messages')
-                        .select('*, profiles(username, avatar_url, role)')
-                        .order('created_at', { ascending: true })
-                        .limit(100);
-
-                    if (!error && data && data.length > 0) {
-                        data.forEach(dbMsg => {
-                            const existsIndex = localChatHistory.findIndex(m => m.id === dbMsg.id || (m.created_at === dbMsg.created_at && m.username === dbMsg.username && m.message === dbMsg.message));
-                            
-                            const resolvedAvatar = dbMsg.avatar_url || (dbMsg.profiles && dbMsg.profiles.avatar_url) || null;
-                            const mergedMsg = {
-                                id: dbMsg.id,
-                                user_id: dbMsg.user_id,
-                                username: dbMsg.username,
-                                avatar_url: resolvedAvatar,
-                                message: dbMsg.message,
-                                created_at: dbMsg.created_at
-                            };
-
-                            if (existsIndex === -1) {
-                                localChatHistory.push(mergedMsg);
-                            } else {
-                                localChatHistory[existsIndex] = { ...localChatHistory[existsIndex], ...mergedMsg };
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.warn('Error fetching chatbox messages:', e);
-                }
+            const client = getSupabase();
+            if (!client) {
+                renderAllChatMessages();
+                return;
             }
 
-            localChatHistory.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
-
             try {
-                localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory));
-            } catch (e) {}
+                const { data, error } = await client
+                    .from('chatbox_messages')
+                    .select('*, profiles(username, avatar_url, role)')
+                    .order('created_at', { ascending: true })
+                    .limit(50);
 
-            renderAllChatMessages();
+                if (!error && data) {
+                    localChatHistory = data;
+                    try { localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory)); } catch(e){}
+                    renderAllChatMessages();
+                }
+            } catch (err) {
+                console.warn('Chatbox load warning:', err);
+                renderAllChatMessages();
+            }
         }
 
         function renderAllChatMessages() {
             const container = document.getElementById('chatbox-messages');
             if (!container) return;
 
-            if (localChatHistory.length === 0) {
+            container.innerHTML = '';
+
+            if (!localChatHistory || localChatHistory.length === 0) {
                 container.innerHTML = `
                     <div id="chatbox-empty-notice" class="h-full flex flex-col items-center justify-center text-slate-400 text-center py-6">
                         <i class="fa-regular fa-comment-dots text-2xl mb-1 text-slate-300"></i>
@@ -1528,24 +1406,119 @@
                 return;
             }
 
-            const isNearBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 100);
-
-            container.innerHTML = '';
             localChatHistory.forEach(msg => {
                 appendChatMessageDOM(msg, false);
             });
 
-            if (isNearBottom) {
-                container.scrollTop = container.scrollHeight;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatMessageContent(text) {
+            if (!text) return '';
+            let escaped = escapeHtml(text);
+            
+            // Format URLs to clickable links
+            escaped = escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-semibold underline hover:text-blue-800 break-all">$1</a>');
+            
+            // Format @mentions to highlighted tags
+            escaped = escaped.replace(/@([a-zA-Z0-9_\s-]+)/g, function(match, uname) {
+                return `<span class="bg-blue-100 text-[#000090] px-1 py-0.5 rounded font-bold text-[11px]">@${uname.trim()}</span>`;
+            });
+
+            return escaped;
+        }
+
+        // ========================================================
+        // 5b. EMOJI & REACTIONS SYSTEM
+        // ========================================================
+        function toggleEmojiPicker() {
+            const dropdown = document.getElementById('emoji-picker-dropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        }
+
+        function switchEmojiTab(category) {
+            const tabs = ['popular', 'smileys', 'gestures', 'objects'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`emoji-tab-${t}`);
+                if (btn) {
+                    if (t === category) {
+                        btn.className = 'px-2.5 py-1 rounded-full bg-blue-100 text-[#000090] font-bold whitespace-nowrap transition text-[11px]';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]';
+                    }
+                }
+            });
+
+            renderEmojiGrid(category);
+        }
+
+        function renderEmojiGrid(category) {
+            const container = document.getElementById('emoji-grid-container');
+            if (!container) return;
+
+            const list = EMOJI_DATA[category] || EMOJI_DATA.popular;
+            container.innerHTML = list.map(e => `
+                <button type="button" onclick="selectEmoji('${e}')" class="hover:scale-125 transition p-1 cursor-pointer rounded hover:bg-slate-100">${e}</button>
+            `).join('');
+        }
+
+        function selectEmoji(emoji) {
+            const input = document.getElementById('chat-input');
+            if (input) {
+                input.value += emoji;
+                input.focus();
             }
+            toggleEmojiPicker();
+        }
+
+        function toggleReactionPicker(msgId) {
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.toggle('hidden');
+        }
+
+        function toggleMessageReaction(msgId, emoji) {
+            if (!chatMessageReactions[msgId]) {
+                chatMessageReactions[msgId] = {};
+            }
+            if (!chatMessageReactions[msgId][emoji]) {
+                chatMessageReactions[msgId][emoji] = 0;
+            }
+            chatMessageReactions[msgId][emoji]++;
+
+            try {
+                localStorage.setItem('sky_chat_reactions', JSON.stringify(chatMessageReactions));
+            } catch(e){}
+
+            const reactionContainer = document.getElementById(`msg-reactions-${msgId}`);
+            if (reactionContainer) {
+                reactionContainer.innerHTML = renderMessageReactionsHTML(msgId);
+            }
+
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.add('hidden');
+        }
+
+        function renderMessageReactionsHTML(msgId) {
+            const reactions = chatMessageReactions[msgId];
+            if (!reactions) return '';
+
+            return Object.entries(reactions)
+                .filter(([emoji, count]) => count > 0)
+                .map(([emoji, count]) => `
+                    <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-full text-[10px] border border-slate-200 font-medium">
+                        <span>${emoji}</span>
+                        <span>${count}</span>
+                    </span>
+                `).join('');
         }
 
         function startPollingFallback() {
-            if (chatboxPollingInterval) return;
+            if (chatboxPollingInterval) clearInterval(chatboxPollingInterval);
             loadChatboxMessages();
+            // Dipercepat dari 3000ms menjadi 1500ms agar penerimaan pesan sangat cepat meski tanpa WebSocket active
             chatboxPollingInterval = setInterval(() => {
                 loadChatboxMessages();
-            }, 3000);
+            }, 1500);
         }
 
         function subscribeChatboxRealtime() {
@@ -1554,11 +1527,11 @@
             if (!supabaseClient) return;
 
             try {
-                const channel = supabaseClient.channel('chatbox-channel');
+                const channel = supabaseClient.channel('chatbox-live-stream');
                 channel
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatbox_messages' }, payload => {
                         const newMsg = payload.new;
-                        const exists = localChatHistory.some(m => m.id === newMsg.id);
+                        const exists = localChatHistory.some(m => m.id === newMsg.id || (m.created_at === newMsg.created_at && m.username === newMsg.username && m.message === newMsg.message));
                         if (!exists) {
                             localChatHistory.push(newMsg);
                             try { localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory)); } catch(e){}
@@ -1566,7 +1539,11 @@
                         }
                     })
                     .subscribe((status, err) => {
-                        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED' || err) {
+                        if (status === 'SUBSCRIBED') {
+                            // Ketika Realtime WebSocket aktif & lancar, interval polling disesuaikan ke 2.5 detik sebagai backup
+                            if (chatboxPollingInterval) clearInterval(chatboxPollingInterval);
+                            chatboxPollingInterval = setInterval(() => { loadChatboxMessages(); }, 2500);
+                        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED' || err) {
                             startPollingFallback();
                         }
                     });
