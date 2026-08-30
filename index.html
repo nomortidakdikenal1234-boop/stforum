@@ -192,6 +192,10 @@
                             <img id="user-avatar" src="https://placehold.co/100/000090/ffffff?text=ST" alt="User" class="w-8 h-8 rounded-full border border-blue-300 object-cover hover:opacity-80 transition">
                             <span id="user-display-name" class="text-xs font-semibold group-hover:text-blue-200 transition">Username</span>
                         </div>
+                        <button onclick="openProfileModal()" title="Pengaturan Profil" class="px-2.5 py-1 bg-blue-800 hover:bg-blue-700 text-white rounded text-xs font-semibold transition flex items-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-user-gear"></i>
+                            <span class="hidden sm:inline">Profil</span>
+                        </button>
                         <button onclick="handleLogout()" title="Logout" class="p-2 text-blue-200 hover:text-white transition cursor-pointer">
                             <i class="fa-solid fa-right-from-bracket text-sm"></i>
                         </button>
@@ -1242,80 +1246,6 @@
 
             if (btn) { btn.disabled = false; btn.innerText = 'Simpan Perubahan Profil'; }
             showToast('Profil berhasil diperbarui!', 'success');
-        }
-            } catch (err) {
-                console.warn("Session check warning:", err);
-                updateUserUI(null);
-            }
-        }
-
-        async function fetchUserProfile(userId, authUser = null) {
-            const client = getSupabase();
-            if (!client) return;
-
-            const { data, error } = await client
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            let profile = data;
-            if (!profile && authUser) {
-                const username = authUser.user_metadata?.username || authUser.email.split('@')[0];
-                profile = {
-                    id: userId,
-                    username: username,
-                    role: (username.toLowerCase() === 'frederick jhonatan') ? 'Staff' : 'Member',
-                    avatar_url: 'https://placehold.co/100/000090/ffffff?text=ST'
-                };
-            }
-
-            if (profile && profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
-                profile.role = 'Staff';
-            }
-
-            currentUserProfile = profile;
-            updateUserUI(profile);
-        }
-
-        function updateUserUI(profile) {
-            const loggedOutView = document.getElementById('logged-out-view');
-            const loggedInView = document.getElementById('logged-in-view');
-            const adminCreateBtn = document.getElementById('admin-create-ann-btn');
-            const adminStaffBtn = document.getElementById('admin-manage-staff-btn');
-            const adminRecruitmentBtn = document.getElementById('admin-edit-recruitment-btn');
-            const adminPartnersBtn = document.getElementById('admin-manage-partners-btn');
-
-            if (profile) {
-                if (loggedOutView) loggedOutView.classList.add('hidden');
-                if (loggedInView) loggedInView.classList.remove('hidden');
-
-                const nameElem = document.getElementById('user-display-name');
-                const avatarElem = document.getElementById('user-avatar');
-
-                if (profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
-                    profile.role = 'Staff';
-                }
-
-                if (nameElem) nameElem.innerText = profile.username || 'User';
-                if (avatarElem) avatarElem.src = profile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
-
-                const isAdminOrStaff = (profile.role === 'Staff');
-                if (adminCreateBtn) adminCreateBtn.classList.toggle('hidden', !isAdminOrStaff);
-                if (adminStaffBtn) adminStaffBtn.classList.toggle('hidden', !isAdminOrStaff);
-                if (adminRecruitmentBtn) adminRecruitmentBtn.classList.toggle('hidden', !isAdminOrStaff);
-                if (adminPartnersBtn) adminPartnersBtn.classList.toggle('hidden', !isAdminOrStaff);
-            } else {
-                if (loggedOutView) loggedOutView.classList.remove('hidden');
-                if (loggedInView) loggedInView.classList.add('hidden');
-                if (adminCreateBtn) adminCreateBtn.classList.add('hidden');
-                if (adminStaffBtn) adminStaffBtn.classList.add('hidden');
-                if (adminRecruitmentBtn) adminRecruitmentBtn.classList.add('hidden');
-                if (adminPartnersBtn) adminPartnersBtn.classList.add('hidden');
-            }
-
-            renderStaffList();
-            renderPartnershipsList();
         }
 
         async function handleLogin(e) {
