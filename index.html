@@ -909,6 +909,14 @@
             ]
         };
 
+        let localChatHistory = [];
+        try {
+            const savedChats = localStorage.getItem('sky_chat_history');
+            if (savedChats) {
+                localChatHistory = JSON.parse(savedChats);
+            }
+        } catch (e) {}
+
         // ========================================================
         // 2. PAGE INITIALIZATION & LIFECYCLE
         // ========================================================
@@ -925,12 +933,16 @@
 
                 const savedReactions = localStorage.getItem('sky_chat_reactions');
                 if (savedReactions) chatMessageReactions = JSON.parse(savedReactions);
+
+                const savedProfile = localStorage.getItem('sky_user_profile');
+                if (savedProfile) currentUserProfile = JSON.parse(savedProfile);
             } catch (e) {}
 
             renderStaffList();
             renderRecruitmentInfo();
             renderPartnershipsList();
             switchEmojiTab('popular');
+            renderAllChatMessages();
 
             const client = getSupabase();
             if (client) {
@@ -1056,8 +1068,181 @@
                 if (session && session.user) {
                     await fetchUserProfile(session.user.id, session.user);
                 } else {
-                    updateUserUI(null);
+                    if (!currentUserProfile) updateUserUI(null);
+                    else updateUserUI(currentUserProfile);
                 }
+            } catch (err) {
+                console.warn("Session check warning:", err);
+                if (!currentUserProfile) updateUserUI(null);
+            }
+        }
+
+        async function fetchUserProfile(userId, authUser = null) {
+            const client = getSupabase();
+            if (!client) return;
+
+            const { data, error } = await client
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            let profile = data;
+            if (!profile && authUser) {
+                const username = authUser.user_metadata?.username || authUser.email.split('@')[0];
+                profile = {
+                    id: userId,
+                    username: username,
+                    role: (username.toLowerCase() === 'frederick jhonatan') ? 'Staff' : 'Member',
+                    avatar_url: 'https://placehold.co/100/000090/ffffff?text=ST'
+                };
+            }
+
+            if (profile) {
+                if (profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
+                    profile.role = 'Staff';
+                }
+                currentUserProfile = profile;
+                try {
+                    localStorage.setItem('sky_user_profile', JSON.stringify(profile));
+                } catch (e) {}
+            }
+
+            updateUserUI(currentUserProfile);
+        }
+
+        function updateUserUI(profile) {
+            const loggedOutView = document.getElementById('logged-out-view');
+            const loggedInView = document.getElementById('logged-in-view');
+            const adminCreateBtn = document.getElementById('admin-create-ann-btn');
+            const adminStaffBtn = document.getElementById('admin-manage-staff-btn');
+            const adminRecruitmentBtn = document.getElementById('admin-edit-recruitment-btn');
+            const adminPartnersBtn = document.getElementById('admin-manage-partners-btn');
+
+            if (profile) {
+                if (loggedOutView) loggedOutView.classList.add('hidden');
+                if (loggedInView) loggedInView.classList.remove('hidden');
+
+                const nameElem = document.getElementById('user-display-name');
+                const avatarElem = document.getElementById('user-avatar');
+
+                if (profile.username && profile.username.toLowerCase() === 'frederick jhonatan') {
+                    profile.role = 'Staff';
+                }
+
+                if (nameElem) nameElem.innerText = profile.username || 'User';
+                
+                let userAvatar = profile.avatar_url;
+                if (!userAvatar || userAvatar.includes('placehold.co')) {
+                    const staffMatch = staffMembersList.find(s => s.name.toLowerCase() === (profile.username || '').toLowerCase());
+                    if (staffMatch && staffMatch.avatar_url) userAvatar = staffMatch.avatar_url;
+                }
+                if (avatarElem && userAvatar) avatarElem.src = userAvatar;
+
+                const isAdminOrStaff = (profile.role === 'Staff');
+                if (adminCreateBtn) adminCreateBtn.classList.toggle('hidden', !isAdminOrStaff);
+                if (adminStaffBtn) adminStaffBtn.classList.toggle('hidden', !isAdminOrStaff);
+                if (adminRecruitmentBtn) adminRecruitmentBtn.classList.toggle('hidden', !isAdminOrStaff);
+                if (adminPartnersBtn) adminPartnersBtn.classList.toggle('hidden', !isAdminOrStaff);
+            } else {
+                if (loggedOutView) loggedOutView.classList.remove('hidden');
+                if (loggedInView) loggedInView.classList.add('hidden');
+                if (adminCreateBtn) adminCreateBtn.classList.add('hidden');
+                if (adminStaffBtn) adminStaffBtn.classList.add('hidden');
+                if (adminRecruitmentBtn) adminRecruitmentBtn.classList.add('hidden');
+                if (adminPartnersBtn) adminPartnersBtn.classList.add('hidden');
+            }
+
+            renderStaffList();
+            renderPartnershipsList();
+            renderAllChatMessages();
+        }
+
+        function openProfileModal() {
+            if (!currentUserProfile) {
+                openLoginModal();
+                return;
+            }
+            const nameInput = document.getElementById('profile-username-input');
+            const previewAvatar = document.getElementById('profile-preview-avatar');
+            if (nameInput) nameInput.value = currentUserProfile.username || '';
+            if (previewAvatar) previewAvatar.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+            uploadedAvatarBase64 = null;
+        }
+
+        function handleAvatarFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 1024 * 1024) {
+                showToast('Ukuran foto terlalu besar! Maksimal 1 MB.', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedAvatarBase64 = e.target.result;
+                const preview = document.getElementById('profile-preview-avatar');
+                if (preview) preview.src = uploadedAvatarBase64;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handleSaveProfile(e) {
+            e.preventDefault();
+            if (!currentUserProfile) return;
+
+            const newUsername = document.getElementById('profile-username-input').value.trim();
+            if (!newUsername) {
+                showToast('Username tidak boleh kosong!', 'error');
+                return;
+            }
+
+            const newAvatar = uploadedAvatarBase64 || currentUserProfile.avatar_url;
+
+            const btn = document.getElementById('profile-save-btn');
+            if (btn) { btn.disabled = true; btn.innerText = 'Menyimpan...'; }
+
+            const oldUsername = currentUserProfile.username;
+            currentUserProfile.username = newUsername;
+            currentUserProfile.avatar_url = newAvatar;
+
+            // Update in Supabase profiles table
+            const client = getSupabase();
+            if (client && currentUserProfile.id) {
+                try {
+                    await client.from('profiles').update({
+                        username: newUsername,
+                        avatar_url: newAvatar
+                    }).eq('id', currentUserProfile.id);
+                } catch (err) {
+                    console.warn('Profile update warning:', err);
+                }
+            }
+
+            // Also update messages in localChatHistory sent by this user
+            localChatHistory.forEach(msg => {
+                if (msg.user_id === currentUserProfile.id || msg.username === oldUsername) {
+                    msg.username = newUsername;
+                    msg.avatar_url = newAvatar;
+                }
+            });
+
+            try {
+                localStorage.setItem('sky_user_profile', JSON.stringify(currentUserProfile));
+                localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory));
+            } catch (err) {}
+
+            updateUserUI(currentUserProfile);
+            closeProfileModal();
+
+            if (btn) { btn.disabled = false; btn.innerText = 'Simpan Perubahan Profil'; }
+            showToast('Profil berhasil diperbarui!', 'success');
+        }
             } catch (err) {
                 console.warn("Session check warning:", err);
                 updateUserUI(null);
@@ -1356,32 +1541,253 @@
         }
 
         async function loadChatboxMessages() {
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('chatbox_messages')
+                        .select('*, profiles(username, avatar_url, role)')
+                        .order('created_at', { ascending: true })
+                        .limit(100);
+
+                    if (!error && data && data.length > 0) {
+                        data.forEach(dbMsg => {
+                            const existsIndex = localChatHistory.findIndex(m => m.id === dbMsg.id || (m.created_at === dbMsg.created_at && m.username === dbMsg.username && m.message === dbMsg.message));
+                            
+                            const resolvedAvatar = dbMsg.avatar_url || (dbMsg.profiles && dbMsg.profiles.avatar_url) || null;
+                            const mergedMsg = {
+                                id: dbMsg.id,
+                                user_id: dbMsg.user_id,
+                                username: dbMsg.username,
+                                avatar_url: resolvedAvatar,
+                                message: dbMsg.message,
+                                created_at: dbMsg.created_at
+                            };
+
+                            if (existsIndex === -1) {
+                                localChatHistory.push(mergedMsg);
+                            } else {
+                                localChatHistory[existsIndex] = { ...localChatHistory[existsIndex], ...mergedMsg };
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Error fetching chatbox messages:', e);
+                }
+            }
+
+            localChatHistory.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+
+            try {
+                localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory));
+            } catch (e) {}
+
+            renderAllChatMessages();
+        }
+
+        function renderAllChatMessages() {
+            const container = document.getElementById('chatbox-messages');
+            if (!container) return;
+
+            if (localChatHistory.length === 0) {
+                container.innerHTML = `
+                    <div id="chatbox-empty-notice" class="h-full flex flex-col items-center justify-center text-slate-400 text-center py-6">
+                        <i class="fa-regular fa-comment-dots text-2xl mb-1 text-slate-300"></i>
+                        <p>Belum ada pesan di chatbox. Mulai percakapan sekarang.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const emptyNotice = document.getElementById('chatbox-empty-notice');
+            if (emptyNotice) emptyNotice.remove();
+
+            const isNearBottom = (container.scrollHeight - container.scrollTop <= container.clientHeight + 100);
+
+            container.innerHTML = '';
+            localChatHistory.forEach(msg => {
+                appendChatMessageDOM(msg, false);
+            });
+
+            if (isNearBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function startPollingFallback() {
+            if (chatboxPollingInterval) return;
+            loadChatboxMessages();
+            chatboxPollingInterval = setInterval(() => {
+                loadChatboxMessages();
+            }, 3000);
+        }
+
+        function subscribeChatboxRealtime() {
+            startPollingFallback();
+
             if (!supabaseClient) return;
 
             try {
-                const { data, error } = await supabaseClient
-                    .from('chatbox_messages')
-                    .select('*, profiles(avatar_url, role)')
-                    .order('created_at', { ascending: true })
-                    .limit(50);
-
-                if (!error && data && data.length > 0) {
-                    const emptyNotice = document.getElementById('chatbox-empty-notice');
-                    if (emptyNotice) emptyNotice.remove();
-
-                    data.forEach(msg => {
-                        // Priority avatar resolution
-                        if (!msg.avatar_url && msg.profiles && msg.profiles.avatar_url) {
-                            msg.avatar_url = msg.profiles.avatar_url;
+                const channel = supabaseClient.channel('chatbox-channel');
+                channel
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatbox_messages' }, payload => {
+                        const newMsg = payload.new;
+                        const exists = localChatHistory.some(m => m.id === newMsg.id);
+                        if (!exists) {
+                            localChatHistory.push(newMsg);
+                            try { localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory)); } catch(e){}
+                            renderAllChatMessages();
                         }
-                        appendChatMessageDOM(msg);
+                    })
+                    .subscribe((status, err) => {
+                        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED' || err) {
+                            startPollingFallback();
+                        }
                     });
-
-                    const container = document.getElementById('chatbox-messages');
-                    if (container) container.scrollTop = container.scrollHeight;
-                }
             } catch (e) {
-                console.warn('Error fetching chatbox messages:', e);
+                startPollingFallback();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            if (!currentUserProfile) {
+                showToast('Silakan login terlebih dahulu untuk mengirim pesan.', 'info');
+                openLoginModal();
+                return;
+            }
+
+            let userAvatar = currentUserProfile.avatar_url;
+            if (!userAvatar || userAvatar.includes('placehold.co')) {
+                const staffObj = staffMembersList.find(s => s.name.toLowerCase() === (currentUserProfile.username || '').toLowerCase());
+                if (staffObj && staffObj.avatar_url) {
+                    userAvatar = staffObj.avatar_url;
+                }
+            }
+
+            const newMsgObj = {
+                id: 'msg_local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                user_id: currentUserProfile.id,
+                username: currentUserProfile.username,
+                avatar_url: userAvatar,
+                message: message,
+                created_at: new Date().toISOString()
+            };
+
+            localChatHistory.push(newMsgObj);
+            try {
+                localStorage.setItem('sky_chat_history', JSON.stringify(localChatHistory));
+            } catch (e) {}
+
+            renderAllChatMessages();
+
+            const container = document.getElementById('chatbox-messages');
+            if (container) container.scrollTop = container.scrollHeight;
+
+            input.value = '';
+            hideMentionDropdown();
+
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('chatbox_messages')
+                        .insert([{
+                            user_id: currentUserProfile.id,
+                            username: currentUserProfile.username,
+                            avatar_url: userAvatar,
+                            message: message
+                        }]);
+
+                    if (error) {
+                        console.warn('Fallback insert without avatar_url if column missing:', error);
+                        await supabaseClient
+                            .from('chatbox_messages')
+                            .insert([{
+                                user_id: currentUserProfile.id,
+                                username: currentUserProfile.username,
+                                message: message
+                            }]);
+                    }
+                } catch (err) {
+                    console.error('Error inserting message to Supabase:', err);
+                }
+            }
+        }
+
+        function appendChatMessageDOM(msg, autoScroll = true) {
+            const container = document.getElementById('chatbox-messages');
+            if (!container) return;
+
+            const msgId = msg.id || ('msg_' + (msg.created_at ? new Date(msg.created_at).getTime() : Date.now()) + '_' + Math.random().toString(36).substr(2, 4));
+
+            if (document.getElementById(`chat-msg-item-${msgId}`)) return;
+
+            const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let avatar = msg.avatar_url;
+            if (currentUserProfile && (msg.user_id === currentUserProfile.id || msg.username === currentUserProfile.username)) {
+                if (currentUserProfile.avatar_url && !currentUserProfile.avatar_url.includes('placehold.co')) {
+                    avatar = currentUserProfile.avatar_url;
+                }
+            }
+            if (!avatar || avatar.includes('placehold.co')) {
+                const staffObj = staffMembersList.find(s => s.name.toLowerCase() === (msg.username || '').toLowerCase());
+                if (staffObj && staffObj.avatar_url) {
+                    avatar = staffObj.avatar_url;
+                }
+            }
+            if (!avatar) {
+                avatar = `https://placehold.co/100/000090/ffffff?text=${encodeURIComponent((msg.username || 'ST').substring(0, 2))}`;
+            }
+
+            const roleColorClass = "text-[#000090] font-bold";
+            const formattedMessage = formatMessageContent(msg.message);
+
+            const msgElement = document.createElement('div');
+            msgElement.className = 'flex items-start gap-2.5 text-xs py-1.5 border-b border-slate-100 group relative';
+            msgElement.id = `chat-msg-item-${msgId}`;
+            msgElement.innerHTML = `
+                <img src="${escapeHtml(avatar)}" alt="${escapeHtml(msg.username)}" 
+                     class="w-7 h-7 rounded-full border border-blue-200 object-cover flex-shrink-0 mt-0.5 shadow-sm"
+                     onerror="this.onerror=null; this.src='https://placehold.co/100/000090/ffffff?text=${encodeURIComponent((msg.username || 'ST').substring(0, 2))}';">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <button onclick="insertMention('${escapeHtml(msg.username)}')" 
+                                class="chat-username-tag ${roleColorClass} text-xs truncate hover:underline cursor-pointer text-left" 
+                                data-username="${escapeHtml(msg.username)}" 
+                                title="Klik untuk mention user ini">
+                            ${escapeHtml(msg.username)}
+                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-400 font-mono">${timeStr}</span>
+                            <button onclick="toggleReactionPicker('${msgId}')" title="Beri reaksi emoji" class="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition text-[11px] p-0.5 cursor-pointer">
+                                <i class="fa-regular fa-face-smile"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-slate-700 text-xs break-words leading-snug mt-0.5">${formattedMessage}</p>
+
+                    <!-- Quick Emoji Reaction Picker Popup -->
+                    <div id="reaction-picker-${msgId}" class="hidden mt-1.5 bg-white border border-slate-200 rounded-full shadow-md p-1 inline-flex items-center gap-1 z-10">
+                        <button onclick="toggleMessageReaction('${msgId}', '👍')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">👍</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '❤️')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">❤️</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '😂')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">😂</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '🔥')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">🔥</button>
+                        <button onclick="toggleMessageReaction('${msgId}', '😮')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">😮</button>
+                    </div>
+
+                    <!-- Reactions List -->
+                    <div id="msg-reactions-${msgId}" class="flex flex-wrap items-center gap-1 mt-1">
+                        ${renderMessageReactionsHTML(msgId)}
+                    </div>
+                </div>
+            `;
+            container.appendChild(msgElement);
+
+            if (autoScroll) {
+                container.scrollTop = container.scrollHeight;
             }
         }
 
