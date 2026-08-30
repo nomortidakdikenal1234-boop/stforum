@@ -1335,31 +1335,45 @@
         async function loadChatboxMessages() {
             if (!supabaseClient) return;
 
-            const { data, error } = await supabaseClient
-                .from('chatbox_messages')
-                .select('*, profiles(avatar_url, role)')
-                .order('created_at', { ascending: true })
-                .limit(50);
+            try {
+                const { data, error } = await supabaseClient
+                    .from('chatbox_messages')
+                    .select('*, profiles(avatar_url, role)')
+                    .order('created_at', { ascending: true })
+                    .limit(50);
 
-            if (data && data.length > 0) {
-                const emptyNotice = document.getElementById('chatbox-empty-notice');
-                if (emptyNotice) emptyNotice.remove();
+                if (!error && data && data.length > 0) {
+                    const emptyNotice = document.getElementById('chatbox-empty-notice');
+                    if (emptyNotice) emptyNotice.remove();
 
-                const container = document.getElementById('chatbox-messages');
-                container.innerHTML = '';
-                data.forEach(msg => appendChatMessageDOM(msg));
-                container.scrollTop = container.scrollHeight;
+                    data.forEach(msg => {
+                        // Priority avatar resolution
+                        if (!msg.avatar_url && msg.profiles && msg.profiles.avatar_url) {
+                            msg.avatar_url = msg.profiles.avatar_url;
+                        }
+                        appendChatMessageDOM(msg);
+                    });
+
+                    const container = document.getElementById('chatbox-messages');
+                    if (container) container.scrollTop = container.scrollHeight;
+                }
+            } catch (e) {
+                console.warn('Error fetching chatbox messages:', e);
             }
         }
 
         function startPollingFallback() {
             if (chatboxPollingInterval) return;
+            loadChatboxMessages();
             chatboxPollingInterval = setInterval(() => {
                 loadChatboxMessages();
-            }, 4000);
+            }, 3000);
         }
 
         function subscribeChatboxRealtime() {
+            // High reliability: Always start polling fallback so chat works even if Canvas blocks WebSockets (wss://)
+            startPollingFallback();
+
             if (!supabaseClient) return;
 
             try {
@@ -1371,7 +1385,7 @@
                         
                         appendChatMessageDOM(payload.new);
                         const container = document.getElementById('chatbox-messages');
-                        container.scrollTop = container.scrollHeight;
+                        if (container) container.scrollTop = container.scrollHeight;
                     })
                     .subscribe((status, err) => {
                         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED' || err) {
@@ -1394,151 +1408,76 @@
                 return;
             }
 
-            if (supabaseClient) {
-                const { error } = await supabaseClient
-                    .from('chatbox_messages')
-                    .insert([{
-                        user_id: currentUserProfile.id,
-                        username: currentUserProfile.username,
-                        message: message
-                    }]);
+            const userAvatar = currentUserProfile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUserProfile.username)}`;
 
-                if (error) {
-                    showToast('Gagal mengirim pesan: ' + error.message, 'error');
-                } else {
-                    loadChatboxMessages();
-                }
-            } else {
-                const emptyNotice = document.getElementById('chatbox-empty-notice');
-                if (emptyNotice) emptyNotice.remove();
-                appendChatMessageDOM({
-                    username: currentUserProfile.username,
-                    avatar_url: currentUserProfile.avatar_url,
-                    message: message,
-                    created_at: new Date().toISOString()
-                });
-            }
+            // 1. OPTIMISTIC RENDER: Immediately render chat message on DOM so it NEVER disappears!
+            const localMsgObj = {
+                id: 'msg_local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                user_id: currentUserProfile.id,
+                username: currentUserProfile.username,
+                avatar_url: userAvatar,
+                message: message,
+                created_at: new Date().toISOString()
+            };
+
+            const emptyNotice = document.getElementById('chatbox-empty-notice');
+            if (emptyNotice) emptyNotice.remove();
+            
+            appendChatMessageDOM(localMsgObj);
+            const container = document.getElementById('chatbox-messages');
+            if (container) container.scrollTop = container.scrollHeight;
+
             input.value = '';
             hideMentionDropdown();
-        }
 
-        const EMOJI_DICTIONARY = {
-            popular: ['👍', '❤️', '😂', '🔥', '🎉', '🚀', '😍', '😮', '😢', '🙏', '💯', '✨', '👏', '😎', '💩', '🤝', '💡', '🥳', '🎯', '✅', '❌'],
-            smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐'],
-            gestures: ['👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘', '👌', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐', '🖖', '👋', '🤙', '💪', '🖕', '✍️', '🙏', '🤝', '👏'],
-            objects: ['🔥', '💥', '✨', '🌟', '💫', '🎉', '🎊', '🚀', '💻', '📱', '🖥️', '⚙️', '🔧', '🛡️', '🔒', '🔑', '💡', '📢', '🔔', '🎯', '🏆', '🥇', '👑', '💎', '📊', '📝', '📌', '✅', '❌', '❓', '❗', '⚠️', '💬', '💭', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖']
-        };
+            // 2. SAVE TO SUPABASE IN BACKGROUND
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('chatbox_messages')
+                        .insert([{
+                            user_id: currentUserProfile.id,
+                            username: currentUserProfile.username,
+                            avatar_url: userAvatar,
+                            message: message
+                        }]);
 
-        function switchEmojiTab(category) {
-            const container = document.getElementById('emoji-grid-container');
-            if (!container) return;
-
-            ['popular', 'smileys', 'gestures', 'objects'].forEach(cat => {
-                const btn = document.getElementById(`emoji-tab-${cat}`);
-                if (btn) {
-                    if (cat === category) {
-                        btn.className = 'px-2.5 py-1 rounded-full bg-blue-100 text-[#000090] font-bold whitespace-nowrap transition text-[11px]';
-                    } else {
-                        btn.className = 'px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]';
+                    if (error) {
+                        console.warn('Fallback insert without avatar_url if schema missing column:', error);
+                        // Retry with standard columns if avatar_url column doesn't exist on DB
+                        await supabaseClient
+                            .from('chatbox_messages')
+                            .insert([{
+                                user_id: currentUserProfile.id,
+                                username: currentUserProfile.username,
+                                message: message
+                            }]);
                     }
-                }
-            });
-
-            const emojis = EMOJI_DICTIONARY[category] || EMOJI_DICTIONARY.popular;
-            container.innerHTML = emojis.map(emoji => `
-                <button type="button" onclick="insertEmoji('${emoji}')" class="p-1 hover:bg-slate-100 hover:scale-125 rounded transition cursor-pointer text-lg">${emoji}</button>
-            `).join('');
-        }
-
-        function toggleEmojiPicker() {
-            const dropdown = document.getElementById('emoji-picker-dropdown');
-            if (dropdown) dropdown.classList.toggle('hidden');
-        }
-
-        function insertEmoji(emoji) {
-            const input = document.getElementById('chat-input');
-            if (!input) return;
-            input.value += emoji;
-            input.focus();
-            toggleEmojiPicker();
-        }
-
-        function toggleReactionPicker(msgId) {
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (picker) picker.classList.toggle('hidden');
-        }
-
-        function toggleMessageReaction(msgId, emoji) {
-            if (!currentUserProfile) {
-                showToast('Silakan login terlebih dahulu untuk memberikan reaksi.', 'info');
-                openLoginModal();
-                return;
-            }
-
-            if (!chatMessageReactions[msgId]) {
-                chatMessageReactions[msgId] = {};
-            }
-            if (!chatMessageReactions[msgId][emoji]) {
-                chatMessageReactions[msgId][emoji] = [];
-            }
-
-            const username = currentUserProfile.username;
-            const userIndex = chatMessageReactions[msgId][emoji].indexOf(username);
-
-            if (userIndex > -1) {
-                chatMessageReactions[msgId][emoji].splice(userIndex, 1);
-                if (chatMessageReactions[msgId][emoji].length === 0) {
-                    delete chatMessageReactions[msgId][emoji];
-                }
-            } else {
-                chatMessageReactions[msgId][emoji].push(username);
-            }
-
-            try {
-                localStorage.setItem('sky_chat_reactions', JSON.stringify(chatMessageReactions));
-            } catch (e) {}
-
-            const reactionsElem = document.getElementById(`msg-reactions-${msgId}`);
-            if (reactionsElem) {
-                reactionsElem.innerHTML = renderMessageReactionsHTML(msgId);
-            }
-
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (picker) picker.classList.add('hidden');
-        }
-
-        function renderMessageReactionsHTML(msgId) {
-            const reactions = chatMessageReactions[msgId];
-            if (!reactions) return '';
-
-            let html = '';
-            for (const [emoji, users] of Object.entries(reactions)) {
-                if (users.length > 0) {
-                    const isMyReaction = currentUserProfile && users.includes(currentUserProfile.username);
-                    const activeClass = isMyReaction ? 'bg-blue-100 border-blue-400 text-blue-900 font-bold' : 'bg-slate-100 border-slate-200 text-slate-700';
-                    html += `
-                        <button onclick="toggleMessageReaction('${msgId}', '${emoji}')" 
-                                title="${users.join(', ')}" 
-                                class="px-2 py-0.5 border rounded-full text-[11px] flex items-center gap-1 hover:bg-blue-50 transition cursor-pointer ${activeClass}">
-                            <span>${emoji}</span>
-                            <span class="text-[10px]">${users.length}</span>
-                        </button>
-                    `;
+                } catch (err) {
+                    console.error('Error inserting message to Supabase:', err);
                 }
             }
-            return html;
         }
 
         function appendChatMessageDOM(msg) {
             const container = document.getElementById('chatbox-messages');
             if (!container) return;
+
             const msgId = msg.id || ('msg_' + (msg.created_at ? new Date(msg.created_at).getTime() : Date.now()) + '_' + Math.random().toString(36).substr(2, 4));
+
+            // Prevent duplicate message elements in DOM
+            if (document.getElementById(`chat-msg-item-${msgId}`)) return;
+
             const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const avatar = msg.avatar_url 
+            // Resolve Avatar URL with smart fallbacks so every user's PP shows up!
+            let avatar = msg.avatar_url 
                 || (msg.profiles && msg.profiles.avatar_url) 
-                || (currentUserProfile && msg.user_id === currentUserProfile.id ? currentUserProfile.avatar_url : null) 
-                || 'https://placehold.co/100/000090/ffffff?text=ST';
+                || (currentUserProfile && (msg.user_id === currentUserProfile.id || msg.username === currentUserProfile.username) ? currentUserProfile.avatar_url : null);
+
+            if (!avatar || avatar.includes('placehold.co') || avatar === 'undefined') {
+                avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.username || 'ST')}`;
+            }
 
             const roleColorClass = "text-[#000090] font-bold";
             const formattedMessage = formatMessageContent(msg.message);
@@ -1549,7 +1488,7 @@
             msgElement.innerHTML = `
                 <img src="${escapeHtml(avatar)}" alt="${escapeHtml(msg.username)}" 
                      class="w-7 h-7 rounded-full border border-blue-200 object-cover flex-shrink-0 mt-0.5 shadow-sm"
-                     onerror="this.onerror=null; this.src='https://placehold.co/100/000090/ffffff?text=ST';">
+                     onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(msg.username || 'ST')}';">
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
                         <button onclick="insertMention('${escapeHtml(msg.username)}')" 
