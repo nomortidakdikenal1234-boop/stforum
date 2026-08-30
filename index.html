@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyTechnology Company</title>
+    <title>SkyTechnology Company Forum</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -122,7 +122,7 @@
 
             <!-- CTA Action Buttons -->
             <div class="flex items-center justify-center gap-4 mb-10">
-                <button type="button" onclick="enterForum()" class="px-7 py-3.5 bg-slate-950 hover:bg-slate-800 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 group text-sm cursor-pointer">
+                <button type="button" onclick="enterForum()" class="px-7 py-3.5 bg-slate-950 hover:bg-slate-800 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 group text-sm cursor-pointer active:scale-95">
                     <span>Get Started</span>
                     <i class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
                 </button>
@@ -200,7 +200,7 @@
 
             </div>
 
-            <!-- Primary Navigation Bar (Cleaned Up: Request Role & Inbox Removed) -->
+            <!-- Primary Navigation Bar -->
             <nav class="bg-[#000070] border-t border-blue-900/50">
                 <div class="max-w-7xl mx-auto px-4 flex items-center justify-between">
                     <div class="flex items-center gap-1 text-xs font-semibold overflow-x-auto">
@@ -260,7 +260,7 @@
 
                     <!-- Chatbox Input with Mention & Emoji Overlay -->
                     <div class="p-2 bg-white border-t border-slate-200 flex items-center gap-2 relative rounded-b-lg">
-                        <!-- Mention Auto-complete Dropdown Popup (Fixed positioning to prevent clipping) -->
+                        <!-- Mention Auto-complete Dropdown Popup -->
                         <div id="chat-mention-dropdown" class="hidden absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar z-50 text-xs"></div>
 
                         <!-- Expanded Emoji Picker Dropdown Popup with Categories -->
@@ -829,86 +829,50 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // ========================================================
-        // 4. PROFILE PICTURE & USERNAME UPLOAD HANDLER
+        // 1. SUPABASE CLIENT & CORE STATE INITIALIZATION
         // ========================================================
-        function openProfileModal() {
-            if (!currentUserProfile) return;
-            const preview = document.getElementById('profile-preview-avatar');
-            if (preview) preview.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
-            const usernameInput = document.getElementById('profile-username-input');
-            if (usernameInput) usernameInput.value = currentUserProfile.username || '';
-            uploadedAvatarBase64 = null;
-            document.getElementById('profile-modal').classList.remove('hidden');
-        }
+        const SUPABASE_URL = "https://ubhnyqudmrkqmziooqfr.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViaG55cXVkbXJrcW16aW9vcWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzY1NDgsImV4cCI6MjEwMzMxMjU0OH0.Pt5be35QWOBG8r6y4UvIhuXLi96utYKi8uaq6cFPS9Q";
 
-        function closeProfileModal() {
-            document.getElementById('profile-modal').classList.add('hidden');
-        }
+        let supabaseClient = null;
+        let currentUserProfile = null;
+        let uploadedAvatarBase64 = null;
+        let chatMessageReactions = {};
+        let isMentionDropdownActive = false;
+        let chatboxPollingInterval = null;
 
-        function handleAvatarFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (file.size > 1024 * 1024) {
-                showToast('Ukuran file foto melebihi 1MB! Pilih file lebih kecil.', 'error');
-                e.target.value = '';
-                return;
+        // LOCAL FALLBACK DATA STORES
+        let staffMembersList = [
+            {
+                id: 'st_1',
+                name: 'Frederick Jhonatan',
+                category: 'Staff',
+                role_title: 'Official Staff',
+                description: 'System Controller & Administrator',
+                avatar_url: 'https://placehold.co/100/000090/ffffff?text=ST',
+                verified: true
             }
+        ];
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                uploadedAvatarBase64 = event.target.result;
-                const preview = document.getElementById('profile-preview-avatar');
-                if (preview) preview.src = uploadedAvatarBase64;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function handleSaveProfile(e) {
-            e.preventDefault();
-            if (!currentUserProfile) return;
-
-            const btn = document.getElementById('profile-save-btn');
-            const newUsername = document.getElementById('profile-username-input').value.trim();
-
-            if (!newUsername) {
-                showToast('Nama / Username tidak boleh kosong.', 'error');
-                return;
+        let partnershipsList = [
+            {
+                id: 'part_1',
+                name: 'Sky AI Community',
+                category: 'Official Partner',
+                description: 'Mitra teknologi penyedia solusi integrasi AI dan sistem otomatisasi.',
+                logo_url: 'https://placehold.co/120/000090/ffffff?text=Sky+AI',
+                link_url: 'https://sky-ai.my.id'
             }
+        ];
 
-            btn.disabled = true;
-            btn.innerText = 'Menyimpan...';
-
-            const updatePayload = { username: newUsername };
-            if (uploadedAvatarBase64) {
-                updatePayload.avatar_url = uploadedAvatarBase64;
+        let announcementsList = [
+            {
+                id: 'ann_1',
+                title: 'Selamat Datang di Official Forum SkyTechnology Company!',
+                content: 'Halo seluruh anggota dan rekan kerja! Forum ini adalah wadah resmi komunikasi, koordinasi divisi, pengumuman update sistem, serta informasi rekrutmen dan kolaborasi partner SkyTechnology Company.',
+                created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+                author: 'Administrator'
             }
-
-            if (supabaseClient) {
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .update(updatePayload)
-                    .eq('id', currentUserProfile.id);
-
-                if (error) {
-                    showToast('Gagal mengubah profil: ' + error.message, 'error');
-                    btn.disabled = false;
-                    btn.innerText = 'Simpan Perubahan Profil';
-                    return;
-                }
-            }
-
-            currentUserProfile.username = newUsername;
-            if (uploadedAvatarBase64) {
-                currentUserProfile.avatar_url = uploadedAvatarBase64;
-            }
-
-            updateUserUI(currentUserProfile);
-            btn.disabled = false;
-            btn.innerText = 'Simpan Perubahan Profil';
-            closeProfileModal();
-            showToast('Profil berhasil diperbarui!', 'success');
-        }
         ];
 
         let recruitmentInfoData = {
@@ -925,6 +889,9 @@
             ]
         };
 
+        // ========================================================
+        // 2. PAGE INITIALIZATION & LIFECYCLE
+        // ========================================================
         document.addEventListener("DOMContentLoaded", async () => {
             try {
                 const savedStaff = localStorage.getItem('sky_staff_members');
@@ -956,7 +923,77 @@
             }
         });
 
-        // TOAST NOTIFICATION SYSTEM
+        // ========================================================
+        // 3. GET STARTED & NAVIGATION LOGIC
+        // ========================================================
+        function enterForum() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const landingPage = document.getElementById('landing-page');
+            const forumApp = document.getElementById('forum-app');
+
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    if (landingPage) landingPage.classList.add('hidden');
+                    if (forumApp) forumApp.classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                }, 1000);
+            } else {
+                if (landingPage) landingPage.classList.add('hidden');
+                if (forumApp) forumApp.classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function switchTab(tab) {
+            const viewHome = document.getElementById('view-home');
+            const viewAnn = document.getElementById('view-announcements');
+            const viewStaff = document.getElementById('view-list-staff');
+            const viewRecruitment = document.getElementById('view-recruitment');
+            const viewPartnership = document.getElementById('view-partnership');
+            const breadcrumb = document.getElementById('breadcrumb-current');
+
+            if (tab === 'home') {
+                if (viewHome) viewHome.classList.remove('hidden');
+                if (viewAnn) viewAnn.classList.add('hidden');
+                if (viewStaff) viewStaff.classList.add('hidden');
+                if (viewRecruitment) viewRecruitment.classList.add('hidden');
+                if (viewPartnership) viewPartnership.classList.add('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Forums';
+            }
+        }
+
+        function openSubforum(name) {
+            const viewHome = document.getElementById('view-home');
+            const viewAnn = document.getElementById('view-announcements');
+            const viewStaff = document.getElementById('view-list-staff');
+            const viewRecruitment = document.getElementById('view-recruitment');
+            const viewPartnership = document.getElementById('view-partnership');
+            const breadcrumb = document.getElementById('breadcrumb-current');
+
+            if (viewHome) viewHome.classList.add('hidden');
+            if (viewAnn) viewAnn.classList.add('hidden');
+            if (viewStaff) viewStaff.classList.add('hidden');
+            if (viewRecruitment) viewRecruitment.classList.add('hidden');
+            if (viewPartnership) viewPartnership.classList.add('hidden');
+
+            if (name === 'Announcement') {
+                if (viewAnn) viewAnn.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Announcement';
+                loadAnnouncements();
+            } else if (name === 'List Staff') {
+                if (viewStaff) viewStaff.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'List Staff';
+            } else if (name === 'Recruitment' || name === 'Recruitment Information') {
+                if (viewRecruitment) viewRecruitment.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Recruitment Information';
+            } else if (name === 'Partnership') {
+                if (viewPartnership) viewPartnership.classList.remove('hidden');
+                if (breadcrumb) breadcrumb.innerText = 'Partnership';
+            }
+        }
+
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -988,7 +1025,7 @@
         }
 
         // ========================================================
-        // 2. AUTHENTICATION & USER SESSION MANAGEMENT
+        // 4. AUTHENTICATION & USER PROFILE
         // ========================================================
         async function checkUserSession() {
             if (!supabaseClient) return;
@@ -1176,13 +1213,17 @@
             showToast('Anda telah logout.', 'info');
         }
 
-        // ========================================================
-        // 3. PROFILE PICTURE UPLOAD HANDLER
-        // ========================================================
         function openProfileModal() {
-            if (!currentUserProfile) return;
+            if (!currentUserProfile) {
+                showToast('Silakan login terlebih dahulu.', 'info');
+                openLoginModal();
+                return;
+            }
             const preview = document.getElementById('profile-preview-avatar');
             if (preview) preview.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
+            const usernameInput = document.getElementById('profile-username-input');
+            if (usernameInput) usernameInput.value = currentUserProfile.username || '';
+            uploadedAvatarBase64 = null;
             document.getElementById('profile-modal').classList.remove('hidden');
         }
 
@@ -1214,47 +1255,54 @@
             if (!currentUserProfile) return;
 
             const btn = document.getElementById('profile-save-btn');
+            const newUsername = document.getElementById('profile-username-input').value.trim();
 
-            if (!uploadedAvatarBase64) {
-                showToast('Pilih file foto profil terlebih dahulu.', 'info');
+            if (!newUsername) {
+                showToast('Nama / Username tidak boleh kosong.', 'error');
                 return;
             }
 
             btn.disabled = true;
             btn.innerText = 'Menyimpan...';
 
+            const updatePayload = { username: newUsername };
+            if (uploadedAvatarBase64) {
+                updatePayload.avatar_url = uploadedAvatarBase64;
+            }
+
             if (supabaseClient) {
                 const { error } = await supabaseClient
                     .from('profiles')
-                    .update({ avatar_url: uploadedAvatarBase64 })
+                    .update(updatePayload)
                     .eq('id', currentUserProfile.id);
 
                 if (error) {
-                    showToast('Gagal mengubah foto profil: ' + error.message, 'error');
+                    showToast('Gagal mengubah profil: ' + error.message, 'error');
                     btn.disabled = false;
                     btn.innerText = 'Simpan Perubahan Profil';
                     return;
                 }
             }
 
-            currentUserProfile.avatar_url = uploadedAvatarBase64;
+            currentUserProfile.username = newUsername;
+            if (uploadedAvatarBase64) {
+                currentUserProfile.avatar_url = uploadedAvatarBase64;
+            }
+
             updateUserUI(currentUserProfile);
             btn.disabled = false;
             btn.innerText = 'Simpan Perubahan Profil';
             closeProfileModal();
-            showToast('Foto profil berhasil diperbarui!', 'success');
+            showToast('Profil berhasil diperbarui!', 'success');
         }
 
         // ========================================================
-        // 4. CHATBOX & MESSAGE FORMATTING (LINKS & EMOJIS & BLUE NICKNAMES)
+        // 5. CHATBOX & MESSAGE HANDLING
         // ========================================================
-        let chatboxPollingInterval = null;
-
         function formatMessageContent(rawText) {
             if (!rawText) return '';
             let safeText = escapeHtml(rawText);
 
-            // 1. Detect and replace links (http, https, www) with clickable anchors
             const urlPattern = /(https?:\/\/[^\s<]+)|(www\.[^\s<]+)/gi;
             safeText = safeText.replace(urlPattern, function(match) {
                 let href = match;
@@ -1264,7 +1312,6 @@
                 return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 font-semibold underline inline-flex items-center gap-0.5 break-all">${match} <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i></a>`;
             });
 
-            // 2. Format @mentions accurately, including full names with spaces
             const knownUsers = getAllKnownUsernames().sort((a, b) => b.length - a.length);
 
             knownUsers.forEach(uname => {
@@ -1276,7 +1323,6 @@
                 });
             });
 
-            // Fallback for single-word @mentions not in known list
             const fallbackMentionPattern = /@([a-zA-Z0-9_-]+)/g;
             safeText = safeText.replace(fallbackMentionPattern, function(match, uname) {
                 if (safeText.includes(`@${uname}</span>`)) return match;
@@ -1376,7 +1422,6 @@
             hideMentionDropdown();
         }
 
-        // EMOJI PICKER & REACTION HANDLERS
         const EMOJI_DICTIONARY = {
             popular: ['👍', '❤️', '😂', '🔥', '🎉', '🚀', '😍', '😮', '😢', '🙏', '💯', '✨', '👏', '😎', '💩', '🤝', '💡', '🥳', '🎯', '✅', '❌'],
             smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐'],
@@ -1495,7 +1540,6 @@
                 || (currentUserProfile && msg.user_id === currentUserProfile.id ? currentUserProfile.avatar_url : null) 
                 || 'https://placehold.co/100/000090/ffffff?text=ST';
 
-            // All nicknames are styled in SkyTechnology Brand Blue (#000090), with NO role suffix
             const roleColorClass = "text-[#000090] font-bold";
             const formattedMessage = formatMessageContent(msg.message);
 
@@ -1523,7 +1567,7 @@
                     </div>
                     <p class="text-slate-700 text-xs break-words leading-snug mt-0.5">${formattedMessage}</p>
 
-                    <!-- Quick Emoji Reaction Picker Popup for Message -->
+                    <!-- Quick Emoji Reaction Picker Popup -->
                     <div id="reaction-picker-${msgId}" class="hidden mt-1.5 bg-white border border-slate-200 rounded-full shadow-md p-1 inline-flex items-center gap-1 z-10">
                         <button onclick="toggleMessageReaction('${msgId}', '👍')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">👍</button>
                         <button onclick="toggleMessageReaction('${msgId}', '❤️')" class="hover:scale-125 transition px-1 text-xs cursor-pointer">❤️</button>
@@ -1542,10 +1586,8 @@
         }
 
         // ========================================================
-        // 5. FIXED UNTRUNCATED MENTION SYSTEM
+        // 6. MENTION AUTOCOMPLETE SYSTEM
         // ========================================================
-        let isMentionDropdownActive = false;
-
         function getAllKnownUsernames() {
             const usersSet = new Set();
             if (currentUserProfile && currentUserProfile.username) usersSet.add(currentUserProfile.username);
@@ -1633,7 +1675,7 @@
         }
 
         // ========================================================
-        // 6. ANNOUNCEMENTS MANAGER
+        // 7. ANNOUNCEMENTS MANAGER
         // ========================================================
         async function loadAnnouncements() {
             const container = document.getElementById('announcements-list-detailed');
@@ -1713,7 +1755,7 @@
                     .eq('id', annId);
 
                 if (error) {
-                    showToast('Gagal menghapus pengumuman dari database: ' + error.message, 'error');
+                    showToast('Gagal menghapus pengumuman: ' + error.message, 'error');
                     return;
                 }
             }
@@ -1775,7 +1817,7 @@
         }
 
         // ========================================================
-        // 7. LIVE SEARCH SYSTEM
+        // 8. LIVE SEARCH SYSTEM
         // ========================================================
         function handleSearchInput(query) {
             const dropdown = document.getElementById('search-results-dropdown');
@@ -1875,7 +1917,7 @@
         });
 
         // ========================================================
-        // 8. DYNAMIC LIST STAFF & RECRUITMENT MANAGERS
+        // 9. LIST STAFF & RECRUITMENT MANAGERS
         // ========================================================
         async function loadStaffMembersFromSupabase() {
             if (!supabaseClient) return;
@@ -2137,7 +2179,7 @@
         }
 
         // ========================================================
-        // 9. DYNAMIC PARTNERSHIP SYSTEM
+        // 10. PARTNERSHIP SYSTEM
         // ========================================================
         async function loadPartnershipsFromSupabase() {
             if (!supabaseClient) return;
@@ -2294,73 +2336,8 @@
         }
 
         // ========================================================
-        // 10. GENERAL UI & NAVIGATION CONTROLS
+        // 11. GENERAL MODAL UTILITIES
         // ========================================================
-        function enterForum() {
-            const loadingOverlay = document.getElementById('loading-overlay');
-            if (loadingOverlay) {
-                loadingOverlay.classList.remove('hidden');
-                setTimeout(() => {
-                    loadingOverlay.classList.add('hidden');
-                    document.getElementById('landing-page').classList.add('hidden');
-                    document.getElementById('forum-app').classList.remove('hidden');
-                    window.scrollTo(0, 0);
-                }, 1500);
-            } else {
-                document.getElementById('landing-page').classList.add('hidden');
-                document.getElementById('forum-app').classList.remove('hidden');
-                window.scrollTo(0, 0);
-            }
-        }
-
-        function switchTab(tab) {
-            const viewHome = document.getElementById('view-home');
-            const viewAnn = document.getElementById('view-announcements');
-            const viewStaff = document.getElementById('view-list-staff');
-            const viewRecruitment = document.getElementById('view-recruitment');
-            const viewPartnership = document.getElementById('view-partnership');
-            const breadcrumb = document.getElementById('breadcrumb-current');
-
-            if (tab === 'home') {
-                if (viewHome) viewHome.classList.remove('hidden');
-                if (viewAnn) viewAnn.classList.add('hidden');
-                if (viewStaff) viewStaff.classList.add('hidden');
-                if (viewRecruitment) viewRecruitment.classList.add('hidden');
-                if (viewPartnership) viewPartnership.classList.add('hidden');
-                if (breadcrumb) breadcrumb.innerText = 'Forums';
-            }
-        }
-
-        function openSubforum(name) {
-            const viewHome = document.getElementById('view-home');
-            const viewAnn = document.getElementById('view-announcements');
-            const viewStaff = document.getElementById('view-list-staff');
-            const viewRecruitment = document.getElementById('view-recruitment');
-            const viewPartnership = document.getElementById('view-partnership');
-            const breadcrumb = document.getElementById('breadcrumb-current');
-
-            if (viewHome) viewHome.classList.add('hidden');
-            if (viewAnn) viewAnn.classList.add('hidden');
-            if (viewStaff) viewStaff.classList.add('hidden');
-            if (viewRecruitment) viewRecruitment.classList.add('hidden');
-            if (viewPartnership) viewPartnership.classList.add('hidden');
-
-            if (name === 'Announcement') {
-                if (viewAnn) viewAnn.classList.remove('hidden');
-                if (breadcrumb) breadcrumb.innerText = 'Announcement';
-                loadAnnouncements();
-            } else if (name === 'List Staff') {
-                if (viewStaff) viewStaff.classList.remove('hidden');
-                if (breadcrumb) breadcrumb.innerText = 'List Staff';
-            } else if (name === 'Recruitment' || name === 'Recruitment Information') {
-                if (viewRecruitment) viewRecruitment.classList.remove('hidden');
-                if (breadcrumb) breadcrumb.innerText = 'Recruitment Information';
-            } else if (name === 'Partnership') {
-                if (viewPartnership) viewPartnership.classList.remove('hidden');
-                if (breadcrumb) breadcrumb.innerText = 'Partnership';
-            }
-        }
-
         function openLoginModal() {
             closeRegisterModal();
             document.getElementById('login-modal').classList.remove('hidden');
