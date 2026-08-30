@@ -841,6 +841,26 @@
         let isMentionDropdownActive = false;
         let chatboxPollingInterval = null;
 
+        // Auto-reconnect helper for Supabase Client
+        function getSupabase() {
+            if (!supabaseClient && window.supabase) {
+                try {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } catch (e) {
+                    console.error("Gagal menginisialisasi Supabase client:", e);
+                }
+            }
+            return supabaseClient;
+        }
+
+        // EMOJI DATA DICTIONARY
+        const EMOJI_DATA = {
+            popular: ['🔥', '❤️', '👍', '😂', '🎉', '🚀', '💯', '✨', '😍', '🙌', '🙏', '😊', '😎', '👏'],
+            smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙'],
+            gestures: ['👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘', '👌', '🤌', '🤏', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚'],
+            objects: ['🚀', '💻', '⚡', '🔥', '🎉', '⭐', '🌟', '💎', '🛡️', '⚙️', '📢', '💡', '🏆', '🎯', '📌', '🔔', '💬', '🌐', '📊', '🔒']
+        };
+
         // LOCAL FALLBACK DATA STORES
         let staffMembersList = [
             {
@@ -912,8 +932,8 @@
             renderPartnershipsList();
             switchEmojiTab('popular');
 
-            if (window.supabase) {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const client = getSupabase();
+            if (client) {
                 await checkUserSession();
                 loadChatboxMessages();
                 subscribeChatboxRealtime();
@@ -1028,10 +1048,11 @@
         // 4. AUTHENTICATION & USER PROFILE
         // ========================================================
         async function checkUserSession() {
-            if (!supabaseClient) return;
+            const client = getSupabase();
+            if (!client) return;
 
             try {
-                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                const { data: { session }, error } = await client.auth.getSession();
                 if (session && session.user) {
                     await fetchUserProfile(session.user.id, session.user);
                 } else {
@@ -1044,9 +1065,10 @@
         }
 
         async function fetchUserProfile(userId, authUser = null) {
-            if (!supabaseClient) return;
+            const client = getSupabase();
+            if (!client) return;
 
-            const { data, error } = await supabaseClient
+            const { data, error } = await client
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
@@ -1117,8 +1139,9 @@
             const password = document.getElementById('login-password').value;
             const btn = document.getElementById('login-submit-btn');
 
-            if (!supabaseClient) {
-                showToast('Supabase client tidak terhubung.', 'error');
+            const client = getSupabase();
+            if (!client) {
+                showToast('Supabase client tidak terhubung. Periksa koneksi atau tunggu CDN memuat.', 'error');
                 return;
             }
 
@@ -1128,7 +1151,7 @@
             btn.innerText = 'Signing In...';
 
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                const { data, error } = await client.auth.signInWithPassword({
                     email: targetEmail,
                     password: password
                 });
@@ -1156,7 +1179,8 @@
             const password = document.getElementById('reg-password').value;
             const btn = document.getElementById('reg-submit-btn');
 
-            if (!supabaseClient) {
+            const client = getSupabase();
+            if (!client) {
                 showToast('Supabase client tidak terhubung.', 'error');
                 return;
             }
@@ -1167,7 +1191,7 @@
             btn.innerText = 'Creating Account...';
 
             try {
-                const { data, error } = await supabaseClient.auth.signUp({
+                const { data, error } = await client.auth.signUp({
                     email: generatedEmail,
                     password: password,
                     options: {
@@ -1181,7 +1205,7 @@
                 if (error) {
                     showToast('Pendaftaran Gagal: ' + error.message, 'error');
                 } else {
-                    const { error: autoLoginErr } = await supabaseClient.auth.signInWithPassword({
+                    const { error: autoLoginErr } = await client.auth.signInWithPassword({
                         email: generatedEmail,
                         password: password
                     });
@@ -1205,95 +1229,94 @@
         }
 
         async function handleLogout() {
-            if (supabaseClient) {
-                await supabaseClient.auth.signOut();
+            const client = getSupabase();
+            if (client) {
+                await client.auth.signOut();
             }
             currentUserProfile = null;
             updateUserUI(null);
             showToast('Anda telah logout.', 'info');
         }
-
-        function openProfileModal() {
-            if (!currentUserProfile) {
-                showToast('Silakan login terlebih dahulu.', 'info');
-                openLoginModal();
-                return;
+<!-- ... existing code ...========= -->
+        // ========================================================
+        // EMOJI & REACTION SYSTEM FUNCTIONS
+        // ========================================================
+        function toggleEmojiPicker() {
+            const dropdown = document.getElementById('emoji-picker-dropdown');
+            if (!dropdown) return;
+            dropdown.classList.toggle('hidden');
+            if (!dropdown.classList.contains('hidden')) {
+                switchEmojiTab('popular');
             }
-            const preview = document.getElementById('profile-preview-avatar');
-            if (preview) preview.src = currentUserProfile.avatar_url || 'https://placehold.co/100/000090/ffffff?text=ST';
-            const usernameInput = document.getElementById('profile-username-input');
-            if (usernameInput) usernameInput.value = currentUserProfile.username || '';
-            uploadedAvatarBase64 = null;
-            document.getElementById('profile-modal').classList.remove('hidden');
         }
 
-        function closeProfileModal() {
-            document.getElementById('profile-modal').classList.add('hidden');
-        }
-
-        function handleAvatarFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (file.size > 1024 * 1024) {
-                showToast('Ukuran file foto melebihi 1MB! Pilih file lebih kecil.', 'error');
-                e.target.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                uploadedAvatarBase64 = event.target.result;
-                const preview = document.getElementById('profile-preview-avatar');
-                if (preview) preview.src = uploadedAvatarBase64;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function handleSaveProfile(e) {
-            e.preventDefault();
-            if (!currentUserProfile) return;
-
-            const btn = document.getElementById('profile-save-btn');
-            const newUsername = document.getElementById('profile-username-input').value.trim();
-
-            if (!newUsername) {
-                showToast('Nama / Username tidak boleh kosong.', 'error');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = 'Menyimpan...';
-
-            const updatePayload = { username: newUsername };
-            if (uploadedAvatarBase64) {
-                updatePayload.avatar_url = uploadedAvatarBase64;
-            }
-
-            if (supabaseClient) {
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .update(updatePayload)
-                    .eq('id', currentUserProfile.id);
-
-                if (error) {
-                    showToast('Gagal mengubah profil: ' + error.message, 'error');
-                    btn.disabled = false;
-                    btn.innerText = 'Simpan Perubahan Profil';
-                    return;
+        function switchEmojiTab(tabName) {
+            const categories = ['popular', 'smileys', 'gestures', 'objects'];
+            categories.forEach(cat => {
+                const btn = document.getElementById(`emoji-tab-${cat}`);
+                if (btn) {
+                    if (cat === tabName) {
+                        btn.className = 'px-2.5 py-1 rounded-full bg-blue-100 text-[#000090] font-bold whitespace-nowrap transition text-[11px]';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-full text-slate-600 hover:bg-slate-100 whitespace-nowrap transition text-[11px]';
+                    }
                 }
+            });
+            renderEmojiGrid(tabName);
+        }
+
+        function renderEmojiGrid(tabName) {
+            const container = document.getElementById('emoji-grid-container');
+            if (!container) return;
+            const list = EMOJI_DATA[tabName] || EMOJI_DATA.popular;
+            container.innerHTML = list.map(e => `
+                <button type="button" onclick="insertEmoji('${e}')" class="p-1 hover:bg-slate-100 rounded text-xl transition cursor-pointer flex items-center justify-center">
+                    ${e}
+                </button>
+            `).join('');
+        }
+
+        function insertEmoji(emoji) {
+            const input = document.getElementById('chat-input');
+            if (!input) return;
+            input.value += emoji;
+            input.focus();
+        }
+
+        function toggleReactionPicker(msgId) {
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) {
+                picker.classList.toggle('hidden');
+            }
+        }
+
+        function toggleMessageReaction(msgId, emoji) {
+            if (!chatMessageReactions[msgId]) {
+                chatMessageReactions[msgId] = {};
+            }
+            const currentCount = chatMessageReactions[msgId][emoji] || 0;
+            chatMessageReactions[msgId][emoji] = currentCount + 1;
+
+            try {
+                localStorage.setItem('sky_chat_reactions', JSON.stringify(chatMessageReactions));
+            } catch (e) {}
+
+            const container = document.getElementById(`msg-reactions-${msgId}`);
+            if (container) {
+                container.innerHTML = renderMessageReactionsHTML(msgId);
             }
 
-            currentUserProfile.username = newUsername;
-            if (uploadedAvatarBase64) {
-                currentUserProfile.avatar_url = uploadedAvatarBase64;
-            }
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.add('hidden');
+        }
 
-            updateUserUI(currentUserProfile);
-            btn.disabled = false;
-            btn.innerText = 'Simpan Perubahan Profil';
-            closeProfileModal();
-            showToast('Profil berhasil diperbarui!', 'success');
+        function renderMessageReactionsHTML(msgId) {
+            const reactions = chatMessageReactions[msgId];
+            if (!reactions) return '';
+            return Object.entries(reactions).map(([emoji, count]) => {
+                if (!count) return '';
+                return `<span class="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 text-[10px] px-1.5 py-0.5 rounded-full text-blue-900 font-semibold">${emoji} ${count}</span>`;
+            }).join('');
         }
 
         // ========================================================
